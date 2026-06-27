@@ -564,26 +564,26 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 
 #### Automated
 
-- [x] 2.1 `./gradlew bootRun --args='--spring.profiles.active=dev'` applies migration without errors
-- [x] 2.2 Flyway logs show `Successfully applied 1 migration` in stdout
+- [x] 2.1 `./gradlew bootRun --args='--spring.profiles.active=dev'` applies migration without errors — 008a67c
+- [x] 2.2 Flyway logs show `Successfully applied 1 migration` in stdout — 008a67c
 
 #### Manual
 
-- [x] 2.3 `psql` confirms `users` table exists with correct column types and constraints
+- [x] 2.3 `psql` confirms `users` table exists with correct column types and constraints — 008a67c
 
 ### Phase 3: Google auth endpoint + JWT sessions
 
 #### Automated
 
-- [ ] 3.1 `./gradlew test` passes (integration test green)
-- [ ] 3.2 No compilation errors
+- [x] 3.1 `./gradlew test` passes (integration test green)
+- [x] 3.2 No compilation errors
 
 #### Manual
 
-- [ ] 3.3 `POST /api/auth/google` with invalid token returns 401 Problem Details
+- [x] 3.3 `POST /api/auth/google` with invalid token returns 401 Problem Details
 - [ ] 3.4 `POST /api/auth/google` with valid real Google ID token returns 200 + JWT
-- [ ] 3.5 `GET /actuator/health` returns 200 without a JWT
-- [ ] 3.6 `GET /api/auth/google` (wrong method) returns 405
+- [x] 3.5 `GET /actuator/health` returns 200 without a JWT
+- [x] 3.6 `GET /api/auth/google` (wrong method) returns 405
 
 ### Phase 4: Dockerize + GCP setup script
 

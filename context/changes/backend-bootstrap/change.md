@@ -3,7 +3,7 @@ change_id: backend-bootstrap
 title: Spring Boot backend bootstrap + Cloud Run deploy
 status: implementing
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-06-28
 roadmap_id: F-01
 prd_refs:
   - FR-001
