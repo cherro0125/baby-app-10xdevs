@@ -9,3 +9,5 @@ spring:
 app:
   jwt:
     secret: dev-secret-minimum-32-chars-for-hs256
+  google:
+    client-id: dev-google-client-id
