@@ -1,0 +1,9 @@
+.gradle/
+build/
+.idea/
+*.class
+*.jar
+*.war
+out/
+.env
+*.local.yml

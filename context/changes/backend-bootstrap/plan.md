@@ -551,14 +551,14 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 
 #### Automated
 
-- [ ] 1.1 `./gradlew build` succeeds (compiles, no test failures)
-- [ ] 1.2 `docker-compose up -d` starts Postgres without errors
-- [ ] 1.3 `./gradlew bootRun --args='--spring.profiles.active=dev'` starts without errors
+- [x] 1.1 `./gradlew build` succeeds (compiles, no test failures)
+- [x] 1.2 `docker-compose up -d` starts Postgres without errors
+- [x] 1.3 `./gradlew bootRun --args='--spring.profiles.active=dev'` starts without errors
 
 #### Manual
 
-- [ ] 1.4 `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`
-- [ ] 1.5 App restarts cleanly after `docker-compose down && docker-compose up -d`
+- [x] 1.4 `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`
+- [x] 1.5 App restarts cleanly after `docker-compose down && docker-compose up -d`
 
 ### Phase 2: Database schema + Flyway migrations
 

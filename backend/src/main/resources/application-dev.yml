@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/babytrack
+    username: babytrack
+    password: babytrack
+  jpa:
+    show-sql: true
+
+app:
+  jwt:
+    secret: dev-secret-minimum-32-chars-for-hs256
