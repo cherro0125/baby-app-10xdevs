@@ -53,7 +53,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 
 ### F-01: Spring Boot backend bootstrap + Cloud Run deploy
 
-- **Outcome:** (foundation) Kotlin/Spring Boot project initialized in `backend/`; Dockerfile builds and runs; deployed to GCP Cloud Run (`europe-west3`); Cloud SQL PostgreSQL provisioned; `POST /auth/google` validates Google ID tokens and returns a JWT session; `users` table seeded; all subsequent slices can make authenticated API calls.
+- **Outcome:** (foundation) Kotlin/Spring Boot project initialized in `backend/`; Dockerfile builds and runs; deployed to GCP Cloud Run (`europe-west3`); Cloud SQL PostgreSQL provisioned; `POST /api/auth/google` validates Google ID tokens and returns a JWT session; `users` table seeded; all subsequent slices can make authenticated API calls.
 - **Change ID:** `backend-bootstrap`
 - **PRD refs:** FR-001 (auth entry point), FR-003 (session persistence), NFR (no data loss — establishes Cloud SQL as the persistence layer), `context/foundation/infrastructure.md`
 - **Unlocks:** S-01 (first slice that calls the backend); transitively all slices depend on this foundation via S-01.
