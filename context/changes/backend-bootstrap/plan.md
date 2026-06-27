@@ -551,25 +551,25 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 
 #### Automated
 
-- [x] 1.1 `./gradlew build` succeeds (compiles, no test failures)
-- [x] 1.2 `docker-compose up -d` starts Postgres without errors
-- [x] 1.3 `./gradlew bootRun --args='--spring.profiles.active=dev'` starts without errors
+- [x] 1.1 `./gradlew build` succeeds (compiles, no test failures) — b6862cd
+- [x] 1.2 `docker-compose up -d` starts Postgres without errors — b6862cd
+- [x] 1.3 `./gradlew bootRun --args='--spring.profiles.active=dev'` starts without errors — b6862cd
 
 #### Manual
 
-- [x] 1.4 `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}`
-- [x] 1.5 App restarts cleanly after `docker-compose down && docker-compose up -d`
+- [x] 1.4 `curl http://localhost:8080/actuator/health` returns `{"status":"UP"}` — b6862cd
+- [x] 1.5 App restarts cleanly after `docker-compose down && docker-compose up -d` — b6862cd
 
 ### Phase 2: Database schema + Flyway migrations
 
 #### Automated
 
-- [ ] 2.1 `./gradlew bootRun --args='--spring.profiles.active=dev'` applies migration without errors
-- [ ] 2.2 Flyway logs show `Successfully applied 1 migration` in stdout
+- [x] 2.1 `./gradlew bootRun --args='--spring.profiles.active=dev'` applies migration without errors
+- [x] 2.2 Flyway logs show `Successfully applied 1 migration` in stdout
 
 #### Manual
 
-- [ ] 2.3 `psql` confirms `users` table exists with correct column types and constraints
+- [x] 2.3 `psql` confirms `users` table exists with correct column types and constraints
 
 ### Phase 3: Google auth endpoint + JWT sessions
 
