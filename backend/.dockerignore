@@ -1,0 +1,9 @@
+.gradle/
+build/
+.env
+*.local.yml
+docker-compose.yml
+.idea/
+.vscode/
+*.md
+scripts/

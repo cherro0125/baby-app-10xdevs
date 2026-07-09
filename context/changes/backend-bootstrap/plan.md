@@ -575,22 +575,22 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 
 #### Automated
 
-- [x] 3.1 `./gradlew test` passes (integration test green)
-- [x] 3.2 No compilation errors
+- [x] 3.1 `./gradlew test` passes (integration test green) — b970322
+- [x] 3.2 No compilation errors — b970322
 
 #### Manual
 
-- [x] 3.3 `POST /api/auth/google` with invalid token returns 401 Problem Details
+- [x] 3.3 `POST /api/auth/google` with invalid token returns 401 Problem Details — b970322
 - [ ] 3.4 `POST /api/auth/google` with valid real Google ID token returns 200 + JWT
-- [x] 3.5 `GET /actuator/health` returns 200 without a JWT
-- [x] 3.6 `GET /api/auth/google` (wrong method) returns 405
+- [x] 3.5 `GET /actuator/health` returns 200 without a JWT — b970322
+- [x] 3.6 `GET /api/auth/google` (wrong method) returns 405 — b970322
 
 ### Phase 4: Dockerize + GCP setup script
 
 #### Automated
 
-- [ ] 4.1 `docker build -t babytrack-backend:local .` succeeds from `backend/`
-- [ ] 4.2 Docker container starts and responds on port 8080
+- [x] 4.1 `docker build -t babytrack-backend:local .` succeeds from `backend/`
+- [x] 4.2 Docker container starts and responds on port 8080
 
 #### Manual
 
