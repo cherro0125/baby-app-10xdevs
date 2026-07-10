@@ -1,0 +1,59 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+        working-directory: backend
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west3-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/babytrack/backend:${{ github.sha }} \
+            ./backend
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/babytrack/backend:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy babytrack-backend \
+            --image europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/babytrack/backend:${{ github.sha }} \
+            --region europe-west3 \
+            --platform managed \
+            --min-instances 1 \
+            --max-instances 3 \
+            --memory 1Gi \
+            --add-cloudsql-instances ${{ secrets.CLOUD_SQL_INSTANCE }} \
+            --set-env-vars SPRING_PROFILES_ACTIVE=prod,CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }},DB_USER=babytrack \
+            --set-secrets DB_PASSWORD=babytrack-db-password:latest,JWT_SECRET=jwt-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest \
+            --service-account babytrack-backend-sa@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --allow-unauthenticated

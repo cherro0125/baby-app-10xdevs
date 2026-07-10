@@ -589,8 +589,8 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 
 #### Automated
 
-- [x] 4.1 `docker build -t babytrack-backend:local .` succeeds from `backend/`
-- [x] 4.2 Docker container starts and responds on port 8080
+- [x] 4.1 `docker build -t babytrack-backend:local .` succeeds from `backend/` — d81223c
+- [x] 4.2 Docker container starts and responds on port 8080 — d81223c
 
 #### Manual
 
