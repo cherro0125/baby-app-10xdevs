@@ -595,8 +595,8 @@ No existing data to migrate — this is a greenfield `users` table. Flyway `V1__
 #### Manual
 
 - [ ] 4.3 `curl http://localhost:8080/actuator/health` against running container returns `{"status":"UP"}`
-- [x] 4.4 `bash backend/scripts/gcp-setup.sh` runs without errors against real GCP project
-- [x] 4.5 Cloud SQL instance appears in GCP console after the script completes
+- [x] 4.4 `bash backend/scripts/gcp-setup.sh` runs without errors against real GCP project — f756449
+- [x] 4.5 Cloud SQL instance appears in GCP console after the script completes — f756449
 
 ### Phase 5: GitHub Actions CI/CD pipeline
 
