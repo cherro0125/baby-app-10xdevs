@@ -3,7 +3,7 @@ project: BabyTrack
 version: 1
 status: draft
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-10
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -29,7 +29,7 @@ BabyTrack gives a woman in active labor and her partner a shared, real-time view
 
 | ID   | Change ID                      | Outcome (user can …)                                                                                              | Prerequisites | PRD refs                                    | Status   |
 |------|--------------------------------|-------------------------------------------------------------------------------------------------------------------|---------------|---------------------------------------------|----------|
-| F-01 | backend-bootstrap              | (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema | —             | FR-001, FR-003, NFR (data persistence)      | ready    |
+| F-01 | backend-bootstrap              | (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema | —             | FR-001, FR-003, NFR (data persistence)      | done     |
 | S-01 | google-auth                    | sign in with Google and sign out; app remembers session across restarts                                           | F-01          | FR-001, FR-003, FR-004, US-01               | proposed |
 | S-02 | partner-linking                | invite a partner via share link/code, accept an invite, and unlink                                                | S-01          | FR-005, FR-007, FR-008, US-01               | proposed |
 | S-03 | contraction-tracking           | log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries | S-01          | FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, US-01, Business Logic | proposed |
@@ -211,4 +211,4 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends an entry here when a change whose Change ID matches a roadmap item is archived.)
+- **F-01: (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema** — Archived 2026-07-10 → `context/archive/2026-06-27-backend-bootstrap/`. Lesson: —.
