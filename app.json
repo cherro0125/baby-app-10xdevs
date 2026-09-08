@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": ".bootstrap-scaffold",
-    "slug": ".bootstrap-scaffold",
+    "name": "BabyTrack",
+    "slug": "babytrack",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bootstrapscaffold",
+    "scheme": "babytrack",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.babytrack.app"
     },
     "android": {
+      "package": "com.babytrack.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,7 +37,11 @@
           }
         }
       ],
-      "expo-image"
+      "expo-image",
+      "@react-native-google-signin/google-signin",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

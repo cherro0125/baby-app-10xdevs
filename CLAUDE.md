@@ -9,16 +9,27 @@ BabyTrack — a React Native / Expo app for contraction tracking during labor an
 ## Commands
 
 ```bash
-npm start          # start Expo dev server (opens QR / simulator picker)
-npm run ios        # start in iOS simulator
-npm run android    # start in Android emulator
-npm run web        # start in browser
 npm run lint       # run ESLint via expo lint
 ```
 
 No test runner is configured yet. `npm run reset-project` moves starter code to `app-example/` and creates a blank `src/app/` — destructive, confirm before running.
 
 > **Critical**: Expo v56 changed many APIs. Always check https://docs.expo.dev/versions/v56.0.0/ before writing Expo-specific code.
+
+## Development workflow
+
+**Expo Go cannot be used.** `@react-native-google-signin/google-signin` (added in S-01) requires native code and is incompatible with Expo Go.
+
+1. **First time (or after native dependency changes):** build the dev client:
+   ```bash
+   eas build --profile development --platform ios
+   ```
+2. **All subsequent JS-only changes:** start Metro against the installed dev client:
+   ```bash
+   npx expo start --dev-client
+   ```
+
+The `npm start`, `npm run ios`, `npm run android`, `npm run web` scripts still exist but only work for web; they will not load the native Google Sign-In module.
 
 ## Architecture
 
