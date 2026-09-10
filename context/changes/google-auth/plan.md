@@ -442,26 +442,26 @@ No existing user data to migrate. The route migration (`index.tsx` → `(app)/in
 
 #### Automated
 
-- [x] 1.1 `npx expo install --check` exits 0 (no version conflicts)
-- [x] 1.2 `app.json` JSON is valid and contains `ios.bundleIdentifier`, `android.package`, scheme `"babytrack"`, google-signin plugin
-- [x] 1.3 `eas.json` JSON is valid and has `development`, `preview`, `production` profiles
+- [x] 1.1 `npx expo install --check` exits 0 (no version conflicts) — bcf55e4
+- [x] 1.2 `app.json` JSON is valid and contains `ios.bundleIdentifier`, `android.package`, scheme `"babytrack"`, google-signin plugin — bcf55e4
+- [x] 1.3 `eas.json` JSON is valid and has `development`, `preview`, `production` profiles — bcf55e4
 
 #### Manual
 
-- [x] 1.4 `app.json` manually inspected — all required fields present
-- [x] 1.5 `eas.json` manually inspected — development profile has `developmentClient: true`
+- [x] 1.4 `app.json` manually inspected — all required fields present — bcf55e4
+- [x] 1.5 `eas.json` manually inspected — development profile has `developmentClient: true` — bcf55e4
 
 ### Phase 2: Auth infrastructure
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` exits 0 on all new auth/i18n files
-- [ ] 2.2 `npx tsc --noEmit` exits 0
-- [ ] 2.3 All new files exist: `src/auth/jwt.ts`, `src/auth/types.ts`, `src/auth/session-provider.tsx`, `src/api/client.ts`, `src/i18n/index.ts`, `src/i18n/locales/en.ts`
+- [x] 2.1 `npm run lint` exits 0 on all new auth/i18n files
+- [x] 2.2 `npx tsc --noEmit` exits 0
+- [x] 2.3 All new files exist: `src/auth/jwt.ts`, `src/auth/types.ts`, `src/auth/session-provider.tsx`, `src/api/client.ts`, `src/i18n/index.ts`, `src/i18n/locales/en.ts`
 
 #### Manual
 
-- [ ] 2.4 `isJwtExpired` returns `false` for a fresh JWT and `true` for an expired one (manual check)
+- [x] 2.4 `isJwtExpired` returns `false` for a fresh JWT and `true` for an expired one (manual check)
 
 ### Phase 3: Routing restructure
 
