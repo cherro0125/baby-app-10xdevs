@@ -455,26 +455,26 @@ No existing user data to migrate. The route migration (`index.tsx` → `(app)/in
 
 #### Automated
 
-- [x] 2.1 `npm run lint` exits 0 on all new auth/i18n files
-- [x] 2.2 `npx tsc --noEmit` exits 0
-- [x] 2.3 All new files exist: `src/auth/jwt.ts`, `src/auth/types.ts`, `src/auth/session-provider.tsx`, `src/api/client.ts`, `src/i18n/index.ts`, `src/i18n/locales/en.ts`
+- [x] 2.1 `npm run lint` exits 0 on all new auth/i18n files — 63b57f0
+- [x] 2.2 `npx tsc --noEmit` exits 0 — 63b57f0
+- [x] 2.3 All new files exist: `src/auth/jwt.ts`, `src/auth/types.ts`, `src/auth/session-provider.tsx`, `src/api/client.ts`, `src/i18n/index.ts`, `src/i18n/locales/en.ts` — 63b57f0
 
 #### Manual
 
-- [x] 2.4 `isJwtExpired` returns `false` for a fresh JWT and `true` for an expired one (manual check)
+- [x] 2.4 `isJwtExpired` returns `false` for a fresh JWT and `true` for an expired one (manual check) — 63b57f0
 
 ### Phase 3: Routing restructure
 
 #### Automated
 
-- [ ] 3.1 `npx tsc --noEmit` exits 0 after route migration
-- [ ] 3.2 `npm run lint` exits 0
+- [x] 3.1 `npx tsc --noEmit` exits 0 after route migration
+- [x] 3.2 `npm run lint` exits 0
 
 #### Manual
 
-- [ ] 3.3 `npx expo start --dev-client` launches without errors
-- [ ] 3.4 App shows sign-in stub (no session in SecureStore)
-- [ ] 3.5 Setting a fake session in SecureStore and restarting shows the tab bar
+- [x] 3.3 `npx expo start --dev-client` launches without errors
+- [x] 3.4 App shows sign-in stub (no session in SecureStore)
+- [x] 3.5 Setting a fake session in SecureStore and restarting shows the tab bar
 
 ### Phase 4: Sign-in screen & Google Sign-In wiring
 
