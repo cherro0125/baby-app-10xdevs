@@ -480,9 +480,9 @@ No existing user data to migrate. The route migration (`index.tsx` → `(app)/in
 
 #### Automated
 
-- [x] 4.1 `npx tsc --noEmit` exits 0
-- [x] 4.2 `npm run lint` exits 0
-- [x] 4.3 `sign-in.tsx` uses `useTranslation()` — no raw EN string literals in JSX
+- [x] 4.1 `npx tsc --noEmit` exits 0 — e7ef2ba
+- [x] 4.2 `npm run lint` exits 0 — e7ef2ba
+- [x] 4.3 `sign-in.tsx` uses `useTranslation()` — no raw EN string literals in JSX — e7ef2ba
 
 #### Manual
 
