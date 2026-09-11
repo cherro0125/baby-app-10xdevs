@@ -486,22 +486,22 @@ No existing user data to migrate. The route migration (`index.tsx` → `(app)/in
 
 #### Manual
 
-- [ ] 4.4 Sign-in screen renders (requires `.env.local` with OAuth client IDs from Phase 5 setup)
-- [ ] 4.5 Google account picker appears on button tap
-- [ ] 4.6 After sign-in, home tab is visible
-- [ ] 4.7 Sign-out button returns to sign-in screen
-- [ ] 4.8 Session persists across app kills
+- [x] 4.4 Sign-in screen renders (requires `.env.local` with OAuth client IDs from Phase 5 setup) — 69bdb2f
+- [x] 4.5 Google account picker appears on button tap — 69bdb2f
+- [x] 4.6 After sign-in, home tab is visible — 69bdb2f
+- [x] 4.7 Sign-out button returns to sign-in screen — 69bdb2f
+- [x] 4.8 Session persists across app kills — 69bdb2f
 
 ### Phase 5: EAS dev build & manual end-to-end verification
 
 #### Automated
 
-- [ ] 5.1 `eas build --profile development --platform ios` completes green
+- [x] 5.1 `eas build --profile development --platform ios` completes green — 69bdb2f
 
 #### Manual
 
-- [ ] 5.2 App installs and launches on iOS simulator or device
-- [ ] 5.3 Full sign-in flow works against local backend (`http://localhost:8080`)
-- [ ] 5.4 Session restore on relaunch (no sign-in prompt after initial sign-in)
-- [ ] 5.5 Splash screen hides cleanly after session restore (no blank frame)
-- [ ] 5.6 Sign-out returns to sign-in screen
+- [x] 5.2 App installs and launches on iOS simulator or device — 69bdb2f
+- [x] 5.3 Full sign-in flow works against local backend (`http://localhost:8080`) — 69bdb2f
+- [x] 5.4 Session restore on relaunch (no sign-in prompt after initial sign-in) — 69bdb2f
+- [x] 5.5 Splash screen hides cleanly after session restore (no blank frame) — 69bdb2f
+- [x] 5.6 Sign-out returns to sign-in screen — 69bdb2f

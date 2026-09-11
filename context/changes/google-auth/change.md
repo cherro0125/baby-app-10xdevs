@@ -1,9 +1,9 @@
 ---
 change_id: google-auth
 title: Google auth
-status: implementing
+status: implemented
 created: 2026-07-10
-updated: 2026-09-08
+updated: 2026-09-11
 archived_at: null
 ---
 
