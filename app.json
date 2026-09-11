@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.babytrack.app"
+      "bundleIdentifier": "com.babytrack.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.babytrack.app",
@@ -38,7 +41,12 @@
         }
       ],
       "expo-image",
-      ["@react-native-google-signin/google-signin", { "iosUrlScheme": "com.googleusercontent.apps.428277455698-4hj84mlf3vp3dohb6p3hrf22r5ksgmkd" }],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.428277455698-4hj84mlf3vp3dohb6p3hrf22r5ksgmkd"
+        }
+      ],
       "expo-secure-store",
       "expo-localization",
       "expo-web-browser"

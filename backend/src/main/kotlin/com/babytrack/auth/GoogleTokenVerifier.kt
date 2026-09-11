@@ -12,12 +12,13 @@ class InvalidGoogleTokenException(message: String) : RuntimeException(message)
 
 @Component
 class GoogleTokenVerifier(
-    @Value("\${app.google.client-id}") clientId: String
+    @Value("\${app.google.client-id}") clientId: String,
+    @Value("\${app.google.ios-client-id:}") iosClientId: String,
 ) {
     private val verifier: GoogleIdTokenVerifier = GoogleIdTokenVerifier.Builder(
         NetHttpTransport(),
         GsonFactory.getDefaultInstance()
-    ).setAudience(listOf(clientId)).build()
+    ).setAudience(listOfNotNull(clientId, iosClientId.ifBlank { null })).build()
 
     fun verify(idToken: String): GoogleTokenClaims {
         val token = try {
