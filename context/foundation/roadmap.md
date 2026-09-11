@@ -3,7 +3,7 @@ project: BabyTrack
 version: 1
 status: draft
 created: 2026-06-27
-updated: 2026-07-10
+updated: 2026-09-11
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -30,7 +30,7 @@ BabyTrack gives a woman in active labor and her partner a shared, real-time view
 | ID   | Change ID                      | Outcome (user can …)                                                                                              | Prerequisites | PRD refs                                    | Status   |
 |------|--------------------------------|-------------------------------------------------------------------------------------------------------------------|---------------|---------------------------------------------|----------|
 | F-01 | backend-bootstrap              | (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema | —             | FR-001, FR-003, NFR (data persistence)      | done     |
-| S-01 | google-auth                    | sign in with Google and sign out; app remembers session across restarts                                           | F-01          | FR-001, FR-003, FR-004, US-01               | proposed |
+| S-01 | google-auth                    | sign in with Google and sign out; app remembers session across restarts                                           | F-01          | FR-001, FR-003, FR-004, US-01               | done     |
 | S-02 | partner-linking                | invite a partner via share link/code, accept an invite, and unlink                                                | S-01          | FR-005, FR-007, FR-008, US-01               | proposed |
 | S-03 | contraction-tracking           | log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries | S-01          | FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, US-01, Business Logic | proposed |
 | S-04 | real-time-shared-contractions  | see a partner's contraction entries appear on-screen within seconds; see who logged each entry; edit or delete any entry | S-02, S-03    | FR-022, FR-023, FR-024, US-01               | proposed |
@@ -81,7 +81,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
   - Google OAuth redirect URI must be configured in Google Cloud Console for both Expo Go (dev) and standalone app (production). The dev URI scheme differs from the production URI — configure this before starting implementation. Owner: dev. Block: no (developer resolves this as a setup step; not a research question that blocks planning).
   - i18n library choice for Expo (react-i18next vs i18n-js + expo-localization). Either works; decision is low-stakes but should be made before S-01 ships so all subsequent screens use the same library. Owner: dev. Block: no (ship with EN-only first, PL strings can follow in the same PR).
 - **Risk:** Sequenced first because auth is the prerequisite for all data-writing slices. Google OAuth on React Native has known redirect URI complexity between Expo Go and production builds; budget time for this in `/10x-plan`. Establish i18n infrastructure here to avoid retrofitting translation keys across all subsequent screens.
-- **Status:** proposed
+- **Status:** done
 
 ---
 
@@ -212,3 +212,4 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 ## Done
 
 - **F-01: (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema** — Archived 2026-07-10 → `context/archive/2026-06-27-backend-bootstrap/`. Lesson: —.
+- **S-01: User can sign in with Google and sign out. The app stores the JWT session token securely and restores auth state on app restart without requiring the user to sign in again. All UI is available in English and Polish (i18n infrastructure established here for all subsequent slices).** — Archived 2026-09-11 → `context/archive/2026-07-10-google-auth/`. Lesson: —.
