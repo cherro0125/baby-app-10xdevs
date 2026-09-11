@@ -4,14 +4,12 @@ import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
+import { BASE_URL } from '@/api/config';
 import { isJwtExpired } from './jwt';
 import type { AuthContextValue, UserDto } from './types';
 
 const SESSION_KEY = 'session';
 const SESSION_USER_KEY = 'session_user';
-const BASE_URL = __DEV__
-  ? 'http://localhost:8080'
-  : (process.env.EXPO_PUBLIC_API_URL ?? '');
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -37,6 +35,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOutRef = useRef(signOut);
+
+  useEffect(() => {
+    signOutRef.current = signOut;
+  });
 
   useEffect(() => {
     async function restore() {

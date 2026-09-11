@@ -8,7 +8,7 @@ spring:
 
 app:
   jwt:
-    secret: dev-secret-minimum-32-chars-for-hs256
+    secret: ${JWT_SECRET:dev-secret-minimum-32-chars-for-hs256}
   google:
     client-id: 428277455698-3iusi6b915j0htplphkii07iu824jpkn.apps.googleusercontent.com
     ios-client-id: 428277455698-4hj84mlf3vp3dohb6p3hrf22r5ksgmkd.apps.googleusercontent.com

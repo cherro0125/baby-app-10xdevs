@@ -3,6 +3,7 @@ package com.babytrack.auth
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
@@ -15,6 +16,10 @@ class GoogleTokenVerifier(
     @Value("\${app.google.client-id}") clientId: String,
     @Value("\${app.google.ios-client-id:}") iosClientId: String,
 ) {
+    private val logger = LoggerFactory.getLogger(GoogleTokenVerifier::class.java)
+
+    // Both IDs belong to the same GCP project.
+    // Native iOS Sign-In issues tokens with the iOS client ID as audience.
     private val verifier: GoogleIdTokenVerifier = GoogleIdTokenVerifier.Builder(
         NetHttpTransport(),
         GsonFactory.getDefaultInstance()
@@ -24,8 +29,9 @@ class GoogleTokenVerifier(
         val token = try {
             verifier.verify(idToken)
         } catch (e: Exception) {
-            throw InvalidGoogleTokenException("Token verification failed: ${e.message}")
-        } ?: throw InvalidGoogleTokenException("Token is null or invalid")
+            logger.warn("Google token verification failed", e)
+            throw InvalidGoogleTokenException("Invalid or expired Google ID token")
+        } ?: throw InvalidGoogleTokenException("Invalid or expired Google ID token")
 
         val payload = token.payload
         return GoogleTokenClaims(

@@ -72,18 +72,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffffff', // Google branding: always white
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
     borderRadius: Spacing.one,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#dadce0',
+    borderColor: '#dadce0', // Google branding: always this grey
     marginTop: Spacing.three,
   },
   buttonPressed: {
     opacity: 0.8,
   },
   buttonText: {
-    color: '#3c4043',
+    color: '#3c4043', // Google branding: always this near-black
   },
 });

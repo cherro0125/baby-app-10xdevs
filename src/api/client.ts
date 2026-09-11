@@ -1,6 +1,4 @@
-const BASE_URL = __DEV__
-  ? 'http://localhost:8080'
-  : (process.env.EXPO_PUBLIC_API_URL ?? '');
+import { BASE_URL } from './config';
 
 export function createApiClient(
   getSession: () => string | null,
@@ -19,6 +17,7 @@ export function createApiClient(
       const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
       if (response.status === 401 || response.status === 403) {
         onUnauthorized();
+        throw new Error('Session expired');
       }
       return response;
     },

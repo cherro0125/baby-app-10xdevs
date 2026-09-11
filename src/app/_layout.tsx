@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { I18nextProvider } from 'react-i18next';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
@@ -29,7 +29,9 @@ export default function RootLayout() {
 }
 
 function RootStack() {
-  const { session } = useSession();
+  const { session, isLoading } = useSession();
+
+  if (isLoading) return null;
 
   return (
     <Stack>
