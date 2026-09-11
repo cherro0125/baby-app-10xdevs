@@ -467,22 +467,22 @@ No existing user data to migrate. The route migration (`index.tsx` → `(app)/in
 
 #### Automated
 
-- [x] 3.1 `npx tsc --noEmit` exits 0 after route migration
-- [x] 3.2 `npm run lint` exits 0
+- [x] 3.1 `npx tsc --noEmit` exits 0 after route migration — cb4e279
+- [x] 3.2 `npm run lint` exits 0 — cb4e279
 
 #### Manual
 
-- [x] 3.3 `npx expo start --dev-client` launches without errors
-- [x] 3.4 App shows sign-in stub (no session in SecureStore)
-- [x] 3.5 Setting a fake session in SecureStore and restarting shows the tab bar
+- [x] 3.3 `npx expo start --dev-client` launches without errors — cb4e279
+- [x] 3.4 App shows sign-in stub (no session in SecureStore) — cb4e279
+- [x] 3.5 Setting a fake session in SecureStore and restarting shows the tab bar — cb4e279
 
 ### Phase 4: Sign-in screen & Google Sign-In wiring
 
 #### Automated
 
-- [ ] 4.1 `npx tsc --noEmit` exits 0
-- [ ] 4.2 `npm run lint` exits 0
-- [ ] 4.3 `sign-in.tsx` uses `useTranslation()` — no raw EN string literals in JSX
+- [x] 4.1 `npx tsc --noEmit` exits 0
+- [x] 4.2 `npm run lint` exits 0
+- [x] 4.3 `sign-in.tsx` uses `useTranslation()` — no raw EN string literals in JSX
 
 #### Manual
 
