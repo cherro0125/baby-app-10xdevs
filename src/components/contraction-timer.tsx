@@ -23,9 +23,11 @@ const STRENGTH_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export function ContractionTimer({ active, onStart, onStop }: ContractionTimerProps) {
   const theme = useTheme();
-  // elapsed is updated inside setInterval (not in render or effect body) to satisfy purity rules
+  // lazy initialiser reads Date.now() once at mount (not in render) — satisfies purity rules
   // parent passes key={active?.id ?? 'none'} so this mounts fresh for each contraction
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(() =>
+    active ? Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000) : 0,
+  );
   const [strength, setStrength] = useState<number | null>(null);
   const [note, setNote] = useState('');
 
@@ -96,8 +98,8 @@ export function ContractionTimer({ active, onStart, onStop }: ContractionTimerPr
         multiline
       />
 
-      <Pressable onPress={handleStop} style={styles.stopButton}>
-        <ThemedText type="smallBold" style={styles.stopButtonText}>
+      <Pressable onPress={handleStop} style={[styles.stopButton, { backgroundColor: theme.danger }]}>
+        <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
           Stop
         </ThemedText>
       </Pressable>
@@ -128,11 +130,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.six,
     borderRadius: Spacing.five,
     alignItems: 'center',
-    backgroundColor: '#D9534F',
   },
-  stopButtonText: {
-    color: '#ffffff',
-  },
+  stopButtonText: {},
   strengthSection: {
     alignSelf: 'stretch',
     gap: Spacing.two,

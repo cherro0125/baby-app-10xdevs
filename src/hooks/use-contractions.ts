@@ -83,15 +83,20 @@ export function useContractions(): UseContractionsResult {
   async function start(startedAt: Date): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
-    const id = uuid();
-    const now = nowIso();
-    const userId = user.id.toString();
-    await db.runAsync(
-      'INSERT INTO contractions (id, user_id, started_at, ended_at, duration_seconds, strength, note, created_at, updated_at, synced) VALUES (?, ?, ?, NULL, NULL, NULL, NULL, ?, ?, 0)',
-      [id, userId, startedAt.toISOString(), now, now],
-    );
-    await enqueueSync(db, 'CREATE', { id, userId, startedAt: startedAt.toISOString() });
-    await reload();
+    try {
+      const id = uuid();
+      const now = nowIso();
+      const userId = user.id.toString();
+      await db.runAsync(
+        'INSERT INTO contractions (id, user_id, started_at, ended_at, duration_seconds, strength, note, created_at, updated_at, synced) VALUES (?, ?, ?, NULL, NULL, NULL, NULL, ?, ?, 0)',
+        [id, userId, startedAt.toISOString(), now, now],
+      );
+      await enqueueSync(db, 'CREATE', { id, userId, startedAt: startedAt.toISOString() });
+      await reload();
+    } catch (e) {
+      console.error('[useContractions] start failed', e);
+      throw e;
+    }
   }
 
   async function finalize(
@@ -102,54 +107,69 @@ export function useContractions(): UseContractionsResult {
   ): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
-    const existing = await db.getFirstAsync<LocalContraction>(
-      'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
-      [id, user.id.toString()],
-    );
-    if (!existing) return;
-    const endedAtIso = endedAt.toISOString();
-    const durationSeconds = computeDuration(existing.startedAt, endedAtIso);
-    const now = nowIso();
-    await db.runAsync(
-      'UPDATE contractions SET ended_at = ?, duration_seconds = ?, strength = ?, note = ?, updated_at = ?, synced = 0 WHERE id = ?',
-      [endedAtIso, durationSeconds, strength ?? null, note ?? null, now, id],
-    );
-    await enqueueSync(db, 'FINALIZE', { id, endedAt: endedAtIso });
-    await reload();
+    try {
+      const existing = await db.getFirstAsync<LocalContraction>(
+        'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
+        [id, user.id.toString()],
+      );
+      if (!existing) return;
+      const endedAtIso = endedAt.toISOString();
+      const durationSeconds = computeDuration(existing.startedAt, endedAtIso);
+      const now = nowIso();
+      await db.runAsync(
+        'UPDATE contractions SET ended_at = ?, duration_seconds = ?, strength = ?, note = ?, updated_at = ?, synced = 0 WHERE id = ?',
+        [endedAtIso, durationSeconds, strength ?? null, note ?? null, now, id],
+      );
+      await enqueueSync(db, 'FINALIZE', { id, endedAt: endedAtIso });
+      await reload();
+    } catch (e) {
+      console.error('[useContractions] finalize failed', e);
+      throw e;
+    }
   }
 
   async function remove(id: string): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
-    await db.runAsync(
-      'DELETE FROM contractions WHERE id = ? AND user_id = ?',
-      [id, user.id.toString()],
-    );
-    await enqueueSync(db, 'DELETE', { id });
-    await reload();
+    try {
+      await db.runAsync(
+        'DELETE FROM contractions WHERE id = ? AND user_id = ?',
+        [id, user.id.toString()],
+      );
+      await enqueueSync(db, 'DELETE', { id, userId: user.id.toString() });
+      await reload();
+    } catch (e) {
+      console.error('[useContractions] remove failed', e);
+      throw e;
+    }
   }
 
   async function edit(id: string, patch: { startedAt?: Date; endedAt?: Date }): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
-    const existing = await db.getFirstAsync<LocalContraction>(
-      'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
-      [id, user.id.toString()],
-    );
-    if (!existing) return;
-    const newStartedAt = patch.startedAt?.toISOString() ?? existing.startedAt;
-    const newEndedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
-    const newDuration =
-      newEndedAt ? computeDuration(newStartedAt, newEndedAt) : null;
-    const now = nowIso();
-    await db.runAsync(
-      'UPDATE contractions SET started_at = ?, ended_at = ?, duration_seconds = ?, updated_at = ?, synced = 0 WHERE id = ?',
-      [newStartedAt, newEndedAt, newDuration, now, id],
-    );
-    if (newEndedAt) {
-      await enqueueSync(db, 'FINALIZE', { id, startedAt: newStartedAt, endedAt: newEndedAt });
+    try {
+      const existing = await db.getFirstAsync<LocalContraction>(
+        'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
+        [id, user.id.toString()],
+      );
+      if (!existing) return;
+      const newStartedAt = patch.startedAt?.toISOString() ?? existing.startedAt;
+      const newEndedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
+      const newDuration =
+        newEndedAt ? computeDuration(newStartedAt, newEndedAt) : null;
+      const now = nowIso();
+      await db.runAsync(
+        'UPDATE contractions SET started_at = ?, ended_at = ?, duration_seconds = ?, updated_at = ?, synced = 0 WHERE id = ?',
+        [newStartedAt, newEndedAt, newDuration, now, id],
+      );
+      if (newEndedAt) {
+        await enqueueSync(db, 'FINALIZE', { id, startedAt: newStartedAt, endedAt: newEndedAt });
+      }
+      await reload();
+    } catch (e) {
+      console.error('[useContractions] edit failed', e);
+      throw e;
     }
-    await reload();
   }
 
   const activeContraction = contractions.find((c) => c.endedAt === null) ?? null;
