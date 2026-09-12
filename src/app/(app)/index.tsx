@@ -21,13 +21,21 @@ export default function ContractionsScreen() {
     );
   }
 
-  function handleStart() {
-    start(new Date());
+  async function handleStart() {
+    try {
+      await start(new Date());
+    } catch (e) {
+      console.error('[ContractionsScreen] start failed', e);
+    }
   }
 
-  function handleStop(endedAt: Date, strength: number | null, note: string | null) {
+  async function handleStop(endedAt: Date, strength: number | null, note: string | null) {
     if (!activeContraction) return;
-    finalize(activeContraction.id, endedAt, strength, note);
+    try {
+      await finalize(activeContraction.id, endedAt, strength, note);
+    } catch (e) {
+      console.error('[ContractionsScreen] finalize failed', e);
+    }
   }
 
   return (
