@@ -374,9 +374,9 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 - [x] 4.2 TypeScript compiles — 8101c11
 
 #### Manual
-- [x] 4.3 Contractions appear in descending order
-- [x] 4.4 Row shows time, duration, gap, strength
-- [x] 4.5 Swipe-to-delete + confirm works
+- [x] 4.3 Contractions appear in descending order — a9145ad
+- [x] 4.4 Row shows time, duration, gap, strength — a9145ad
+- [x] 4.5 Swipe-to-delete + confirm works — a9145ad
 
 ### Phase 5: Manual time entry + crash recovery
 
