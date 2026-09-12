@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
 interface ContractionRepository : JpaRepository<Contraction, UUID> {
-    fun findAllByUserIdOrderByStartedAtDesc(userId: UUID): List<Contraction>
+    fun findTop200ByUserIdOrderByStartedAtDesc(userId: UUID): List<Contraction>
 }

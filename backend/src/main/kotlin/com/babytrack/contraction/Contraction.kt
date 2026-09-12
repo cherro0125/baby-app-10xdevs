@@ -21,8 +21,11 @@ class Contraction(
     val id: UUID = UUID.randomUUID(),
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
     val user: User,
+
+    @Column(name = "user_id", insertable = false, updatable = false)
+    val userId: UUID = UUID.randomUUID(),
 
     @Column(name = "started_at", nullable = false)
     var startedAt: Instant,

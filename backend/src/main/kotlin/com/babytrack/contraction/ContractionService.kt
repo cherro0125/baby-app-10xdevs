@@ -24,6 +24,8 @@ class ContractionService(
         val contraction = contractionRepository.findById(id)
             .filter { it.user.id == userId }
             .orElseThrow { ContractionNotFoundException("Contraction not found") }
+        if (contraction.endedAt != null) return contraction
+        require(endedAt.isAfter(contraction.startedAt)) { "endedAt must be after startedAt" }
         contraction.endedAt = endedAt
         contraction.durationSeconds = ChronoUnit.SECONDS.between(contraction.startedAt, endedAt).toInt()
         contraction.updatedAt = Instant.now()
@@ -32,7 +34,7 @@ class ContractionService(
 
     @Transactional(readOnly = true)
     fun list(userId: UUID): List<Contraction> =
-        contractionRepository.findAllByUserIdOrderByStartedAtDesc(userId)
+        contractionRepository.findTop200ByUserIdOrderByStartedAtDesc(userId)
 
     @Transactional
     fun delete(id: UUID, userId: UUID) {

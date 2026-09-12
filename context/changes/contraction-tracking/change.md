@@ -1,9 +1,9 @@
 ---
 change_id: contraction-tracking
 title: Contraction tracking
-status: implementing
+status: impl_reviewed
 created: 2026-09-11
-updated: 2026-09-11
+updated: 2026-09-12
 archived_at: null
 ---
 

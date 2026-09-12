@@ -33,7 +33,7 @@ data class ContractionDto(
 
 fun Contraction.toDto() = ContractionDto(
     id = id,
-    userId = user.id,
+    userId = userId,
     startedAt = startedAt,
     endedAt = endedAt,
     durationSeconds = durationSeconds,
@@ -47,7 +47,8 @@ fun Contraction.toDto() = ContractionDto(
 class ContractionController(private val contractionService: ContractionService) {
 
     private fun principal(): AuthenticatedUser =
-        SecurityContextHolder.getContext().authentication.principal as AuthenticatedUser
+        SecurityContextHolder.getContext().authentication?.principal as? AuthenticatedUser
+            ?: throw IllegalStateException("No authenticated principal")
 
     @PostMapping
     fun start(@Valid @RequestBody request: StartContractionRequest): ResponseEntity<ContractionDto> {
