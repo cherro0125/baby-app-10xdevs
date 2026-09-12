@@ -44,7 +44,7 @@ export interface UseContractionsResult {
   activeContraction: LocalContraction | null;
   isLoading: boolean;
   start: (startedAt: Date) => Promise<void>;
-  finalize: (id: string, endedAt: Date) => Promise<void>;
+  finalize: (id: string, endedAt: Date, strength?: number | null, note?: string | null) => Promise<void>;
   remove: (id: string) => Promise<void>;
   edit: (id: string, patch: { startedAt?: Date; endedAt?: Date }) => Promise<void>;
 }
@@ -94,7 +94,12 @@ export function useContractions(): UseContractionsResult {
     await reload();
   }
 
-  async function finalize(id: string, endedAt: Date): Promise<void> {
+  async function finalize(
+    id: string,
+    endedAt: Date,
+    strength?: number | null,
+    note?: string | null,
+  ): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
     const existing = await db.getFirstAsync<LocalContraction>(
@@ -106,8 +111,8 @@ export function useContractions(): UseContractionsResult {
     const durationSeconds = computeDuration(existing.startedAt, endedAtIso);
     const now = nowIso();
     await db.runAsync(
-      'UPDATE contractions SET ended_at = ?, duration_seconds = ?, updated_at = ?, synced = 0 WHERE id = ?',
-      [endedAtIso, durationSeconds, now, id],
+      'UPDATE contractions SET ended_at = ?, duration_seconds = ?, strength = ?, note = ?, updated_at = ?, synced = 0 WHERE id = ?',
+      [endedAtIso, durationSeconds, strength ?? null, note ?? null, now, id],
     );
     await enqueueSync(db, 'FINALIZE', { id, endedAt: endedAtIso });
     await reload();

@@ -345,23 +345,23 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 2: Local data layer
 
 #### Automated
-- [x] 2.1 npm run lint passes
-- [x] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes — d114cc0
+- [x] 2.2 TypeScript compiles — d114cc0
 
 #### Manual
-- [x] 2.3 Dev build starts without crash
-- [x] 2.4 start/finalize/remove produce correct SQLite rows
+- [x] 2.3 Dev build starts without crash — d114cc0
+- [x] 2.4 start/finalize/remove produce correct SQLite rows — d114cc0
 
 ### Phase 3: Navigation + timer UI
 
 #### Automated
-- [ ] 3.1 npm run lint passes
-- [ ] 3.2 TypeScript compiles
+- [x] 3.1 npm run lint passes
+- [x] 3.2 TypeScript compiles
 
 #### Manual
-- [ ] 3.3 Explore tab removed
-- [ ] 3.4 Contractions tab shows timer screen
-- [ ] 3.5 Start begins timer; Stop records contraction
+- [x] 3.3 Explore tab removed
+- [x] 3.4 Contractions tab shows timer screen
+- [x] 3.5 Start begins timer; Stop records contraction
 
 ### Phase 4: History list + delete
 
