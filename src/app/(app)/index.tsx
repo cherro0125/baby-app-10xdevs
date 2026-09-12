@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ContractionList } from '@/components/contraction-list';
 import { ContractionTimer } from '@/components/contraction-timer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -8,7 +9,7 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useContractions } from '@/hooks/use-contractions';
 
 export default function ContractionsScreen() {
-  const { activeContraction, isLoading, start, finalize } = useContractions();
+  const { contractions, activeContraction, isLoading, start, finalize, remove } = useContractions();
 
   if (isLoading) {
     return (
@@ -39,7 +40,7 @@ export default function ContractionsScreen() {
             onStart={handleStart}
             onStop={handleStop}
           />
-          {/* ContractionList — Phase 4 */}
+          <ContractionList contractions={contractions} onDelete={remove} />
         </ThemedView>
       </ScrollView>
     </SafeAreaView>

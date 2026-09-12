@@ -366,8 +366,8 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 4: History list + delete
 
 #### Automated
-- [ ] 4.1 npm run lint passes
-- [ ] 4.2 TypeScript compiles
+- [x] 4.1 npm run lint passes
+- [x] 4.2 TypeScript compiles
 
 #### Manual
 - [ ] 4.3 Contractions appear in descending order
