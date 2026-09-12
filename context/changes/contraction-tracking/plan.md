@@ -33,6 +33,7 @@ Full implementation of S-03 contraction tracking: backend REST API, local SQLite
 11. **5-1-1 signal**: Persistent status banner at top of log screen; "May be time to go to the hospital" copy when threshold met
 12. **History display**: Compact rows — timestamp, duration, gap to previous, strength inline
 13. **Offline saves**: SQLite-first + background sync queue designed for S-04 reuse
+14. **Delete confirm cancel (Phase 4 addendum)**: the inline "Confirm delete?" row cancels via an explicit "Cancel" button, not a literal tap-anywhere-on-screen — true outside-tap detection needs a screen-wide overlay, disproportionate for one row's affordance
 
 ---
 
@@ -200,8 +201,8 @@ Render the list of past contractions below the timer with compact rows showing t
 
 - `src/components/contraction-list.tsx`
   - Props: `{ contractions: LocalContraction[]; onDelete: (id: string) => void }`
-  - `<FlatList>` of `<ContractionRow>` items
-  - `keyExtractor` = item id
+  - Renders `<ContractionRow>` items *(implemented as a plain `View` + `.map()`, not `<FlatList>` — the screen already wraps content in a `ScrollView`, and nesting a `FlatList` inside it triggers React Native's "VirtualizedLists never nested in ScrollViews" dev warning for no windowing benefit at this data scale — well under a few hundred rows per session)*
+  - `key` = item id
   - Empty state: "No contractions recorded yet" centred text
 
 - `src/components/contraction-row.tsx`
@@ -215,6 +216,9 @@ Render the list of past contractions below the timer with compact rows showing t
 
 - `src/app/(app)/index.tsx`
   - Wire `<ContractionList>` below the timer; pass `contractions` and `remove` from `useContractions()`
+
+- `src/app/_layout.tsx` *(unplanned, added during implementation)*
+  - Wrap the app root in `GestureHandlerRootView` — required for `Swipeable` (used by `contraction-row.tsx`) to work reliably, especially on Android; nothing in the codebase used `react-native-gesture-handler` before this phase
 
 ### Success Criteria
 
@@ -366,13 +370,13 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 4: History list + delete
 
 #### Automated
-- [ ] 4.1 npm run lint passes
-- [ ] 4.2 TypeScript compiles
+- [x] 4.1 npm run lint passes — 8101c11
+- [x] 4.2 TypeScript compiles — 8101c11
 
 #### Manual
-- [ ] 4.3 Contractions appear in descending order
-- [ ] 4.4 Row shows time, duration, gap, strength
-- [ ] 4.5 Swipe-to-delete + confirm works
+- [x] 4.3 Contractions appear in descending order — a9145ad
+- [x] 4.4 Row shows time, duration, gap, strength — a9145ad
+- [x] 4.5 Swipe-to-delete + confirm works — a9145ad
 
 ### Phase 5: Manual time entry + crash recovery
 
