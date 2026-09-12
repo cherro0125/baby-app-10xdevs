@@ -331,26 +331,26 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 1: Backend API
 
 #### Automated
-- [x] 1.1 V2 migration applied cleanly
-- [x] 1.2 POST /api/contractions → 201
-- [x] 1.3 PATCH /api/contractions/{id} → 200 with durationSeconds
-- [x] 1.4 GET /api/contractions → ordered list
-- [x] 1.5 DELETE /api/contractions/{id} → 204
-- [x] 1.6 PATCH/DELETE with wrong owner → 404
+- [x] 1.1 V2 migration applied cleanly — a600fd9
+- [x] 1.2 POST /api/contractions → 201 — a600fd9
+- [x] 1.3 PATCH /api/contractions/{id} → 200 with durationSeconds — a600fd9
+- [x] 1.4 GET /api/contractions → ordered list — a600fd9
+- [x] 1.5 DELETE /api/contractions/{id} → 204 — a600fd9
+- [x] 1.6 PATCH/DELETE with wrong owner → 404 — a600fd9
 
 #### Manual
-- [x] 1.7 Flyway V2 migration visible in startup logs
-- [x] 1.8 `contractions` table exists in DB
+- [x] 1.7 Flyway V2 migration visible in startup logs — a600fd9
+- [x] 1.8 `contractions` table exists in DB — a600fd9
 
 ### Phase 2: Local data layer
 
 #### Automated
-- [ ] 2.1 npm run lint passes
-- [ ] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes
+- [x] 2.2 TypeScript compiles
 
 #### Manual
-- [ ] 2.3 Dev build starts without crash
-- [ ] 2.4 start/finalize/remove produce correct SQLite rows
+- [x] 2.3 Dev build starts without crash
+- [x] 2.4 start/finalize/remove produce correct SQLite rows
 
 ### Phase 3: Navigation + timer UI
 
