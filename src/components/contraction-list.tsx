@@ -1,4 +1,4 @@
-import { FlatList, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ContractionRow } from '@/components/contraction-row';
 import { ThemedText } from '@/components/themed-text';
@@ -8,7 +8,7 @@ import type { LocalContraction } from '@/db/types';
 
 interface ContractionListProps {
   contractions: LocalContraction[];
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 function gapSecondsToPrevious(contractions: LocalContraction[], index: number): number | null {
@@ -32,19 +32,16 @@ export function ContractionList({ contractions, onDelete }: ContractionListProps
   }
 
   return (
-    <FlatList
-      data={contractions}
-      keyExtractor={(item) => item.id}
-      scrollEnabled={false}
-      style={styles.list}
-      renderItem={({ item, index }) => (
+    <View style={styles.list}>
+      {contractions.map((item, index) => (
         <ContractionRow
+          key={item.id}
           contraction={item}
           gapSeconds={gapSecondsToPrevious(contractions, index)}
           onDelete={onDelete}
         />
-      )}
-    />
+      ))}
+    </View>
   );
 }
 

@@ -11,7 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 interface ContractionRowProps {
   contraction: LocalContraction;
   gapSeconds: number | null;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -40,7 +40,9 @@ export function ContractionRow({ contraction, gapSeconds, onDelete }: Contractio
   if (confirming) {
     return (
       <ThemedView type="backgroundElement" style={styles.row}>
-        <Pressable style={styles.confirmAction} onPress={() => onDelete(contraction.id)}>
+        <Pressable
+          style={styles.confirmAction}
+          onPress={() => onDelete(contraction.id).catch(() => setConfirming(false))}>
           <ThemedText type="smallBold" themeColor="danger">
             Confirm delete?
           </ThemedText>
