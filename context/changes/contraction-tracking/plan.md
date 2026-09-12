@@ -381,8 +381,8 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 5: Manual time entry + crash recovery
 
 #### Automated
-- [ ] 5.1 npm run lint passes
-- [ ] 5.2 TypeScript compiles
+- [x] 5.1 npm run lint passes
+- [x] 5.2 TypeScript compiles
 
 #### Manual
 - [ ] 5.3 Incomplete contraction modal appears on relaunch

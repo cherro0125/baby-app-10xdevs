@@ -43,6 +43,8 @@ export interface UseContractionsResult {
   contractions: LocalContraction[];
   activeContraction: LocalContraction | null;
   isLoading: boolean;
+  /** Id of the active contraction present when the DB first loaded — for crash-recovery detection. */
+  initialActiveId: string | null | undefined;
   start: (startedAt: Date) => Promise<void>;
   finalize: (id: string, endedAt: Date, strength?: number | null, note?: string | null) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -54,6 +56,8 @@ export function useContractions(): UseContractionsResult {
   const dbRef = useRef<AppDatabase | null>(null);
   const [contractions, setContractions] = useState<LocalContraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // undefined = not yet loaded; null = no active contraction at load time; string = id
+  const [initialActiveId, setInitialActiveId] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +69,7 @@ export function useContractions(): UseContractionsResult {
       if (!cancelled && user) {
         const rows = await loadContractions(db, user.id.toString());
         setContractions(rows);
+        setInitialActiveId(rows.find((r) => r.endedAt === null)?.id ?? null);
       }
       if (!cancelled) setIsLoading(false);
     }
@@ -174,5 +179,5 @@ export function useContractions(): UseContractionsResult {
 
   const activeContraction = contractions.find((c) => c.endedAt === null) ?? null;
 
-  return { contractions, activeContraction, isLoading, start, finalize, remove, edit };
+  return { contractions, activeContraction, isLoading, initialActiveId, start, finalize, remove, edit };
 }

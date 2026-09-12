@@ -12,6 +12,7 @@ interface ContractionRowProps {
   contraction: LocalContraction;
   gapSeconds: number | null;
   onDelete: (id: string) => Promise<void>;
+  onEdit: (contraction: LocalContraction) => void;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -27,7 +28,7 @@ function formatGap(seconds: number | null): string {
   return `${m} min apart`;
 }
 
-export function ContractionRow({ contraction, gapSeconds, onDelete }: ContractionRowProps) {
+export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: ContractionRowProps) {
   const theme = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const [confirming, setConfirming] = useState(false);
@@ -69,7 +70,7 @@ export function ContractionRow({ contraction, gapSeconds, onDelete }: Contractio
         </Pressable>
       )}>
       <ThemedView type="backgroundElement" style={styles.row}>
-        <ThemedView type="backgroundElement" style={styles.rowMain}>
+        <Pressable style={styles.rowMain} onPress={() => onEdit(contraction)}>
           <ThemedText type="smallBold">
             {new Date(contraction.startedAt).toLocaleTimeString([], {
               hour: '2-digit',
@@ -79,7 +80,7 @@ export function ContractionRow({ contraction, gapSeconds, onDelete }: Contractio
           <ThemedText type="small" themeColor="textSecondary">
             {formatDuration(contraction.durationSeconds)} · {formatGap(gapSeconds)}
           </ThemedText>
-        </ThemedView>
+        </Pressable>
         {contraction.strength !== null && (
           <ThemedView type="backgroundSelected" style={styles.strengthBadge}>
             <ThemedText type="smallBold">{contraction.strength}</ThemedText>
