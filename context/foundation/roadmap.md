@@ -3,7 +3,7 @@ project: BabyTrack
 version: 1
 status: draft
 created: 2026-06-27
-updated: 2026-09-13
+updated: 2026-09-14
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -31,7 +31,7 @@ BabyTrack gives a woman in active labor and her partner a shared, real-time view
 |------|--------------------------------|-------------------------------------------------------------------------------------------------------------------|---------------|---------------------------------------------|----------|
 | F-01 | backend-bootstrap              | (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema | —             | FR-001, FR-003, NFR (data persistence)      | done     |
 | S-01 | google-auth                    | sign in with Google and sign out; app remembers session across restarts                                           | F-01          | FR-001, FR-003, FR-004, US-01               | done     |
-| S-02 | partner-linking                | invite a partner via share link/code, accept an invite, and unlink                                                | S-01          | FR-005, FR-007, FR-008, US-01               | proposed |
+| S-02 | partner-linking                | invite a partner via share link/code, accept an invite, and unlink                                                | S-01          | FR-005, FR-007, FR-008, US-01               | done     |
 | S-03 | contraction-tracking           | log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries | S-01          | FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, US-01, Business Logic | done     |
 | S-04 | real-time-shared-contractions  | see a partner's contraction entries appear on-screen within seconds; see who logged each entry; edit or delete any entry | S-02, S-03    | FR-022, FR-023, FR-024, US-01               | proposed |
 | S-05 | feeding-log                    | log a feeding event (type, amount, description); view feeding history; partner sees it in real time               | S-04          | FR-016, FR-017, FR-022, FR-023, FR-024, US-01 | proposed |
@@ -97,7 +97,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
   - What is the invite code format and expiry policy? (e.g., 6-character alphanumeric, 24h expiry). Owner: user. Block: no (any reasonable default works for MVP; can be tuned post-launch).
   - Deep link handling: when a partner taps the invite link, the app must open to the "accept invite" screen. Expo Router deep link config needs testing on iOS and Android. Owner: dev. Block: no (testable during implementation).
 - **Risk:** Must land before S-04 (the north star depends on two linked accounts). Sequenced in parallel with S-03 to avoid blocking the north star on sequential execution. Invite link deep linking is the most likely source of unexpected platform friction.
-- **Status:** proposed
+- **Status:** done
 
 ---
 
@@ -214,3 +214,4 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 - **F-01: (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema** — Archived 2026-07-10 → `context/archive/2026-06-27-backend-bootstrap/`. Lesson: —.
 - **S-01: User can sign in with Google and sign out. The app stores the JWT session token securely and restores auth state on app restart without requiring the user to sign in again. All UI is available in English and Polish (i18n infrastructure established here for all subsequent slices).** — Archived 2026-09-11 → `context/archive/2026-07-10-google-auth/`. Lesson: —.
 - **S-03: User can log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries** — Archived 2026-09-13 → `context/archive/2026-09-11-contraction-tracking/`. Lesson: —.
+- **S-02: invite a partner via share link/code, accept an invite, and unlink** — Archived 2026-09-14 → `context/archive/2026-09-13-partner-linking/`. Lesson: —.
