@@ -290,13 +290,13 @@ Add code-entry to the Partner tab for manually entering a partner's code, handle
 ### Phase 2: Frontend — Partner tab + invite generation
 
 #### Automated
-- [ ] 2.1 npm run lint passes
-- [ ] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes
+- [x] 2.2 TypeScript compiles
 
 #### Manual
-- [ ] 2.3 Partner tab appears in tab bar
-- [ ] 2.4 Invite your partner shows code + share button
-- [ ] 2.5 Share button opens system share sheet with babytrack:// link
+- [x] 2.3 Partner tab appears in tab bar
+- [x] 2.4 Invite your partner shows code + share button
+- [x] 2.5 Share button opens system share sheet with babytrack:// link
 
 ### Phase 3: Frontend — accept-invite flow
 
