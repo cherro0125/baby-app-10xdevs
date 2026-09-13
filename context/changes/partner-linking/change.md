@@ -1,9 +1,9 @@
 ---
 change_id: partner-linking
 title: Partner linking
-status: implementing
+status: impl_reviewed
 created: 2026-09-13
-updated: 2026-09-13
+updated: 2026-09-14
 archived_at: null
 ---
 

@@ -8,6 +8,7 @@ import java.util.UUID
 interface PartnerInviteRepository : JpaRepository<PartnerInvite, UUID> {
     fun findByToken(token: String): PartnerInvite?
     fun findByInviterIdAndAcceptedAtIsNull(inviterId: UUID): PartnerInvite?
+    fun deleteByInviterIdAndAcceptedAtIsNull(inviterId: UUID)
 }
 
 interface PartnerLinkRepository : JpaRepository<PartnerLink, UUID> {

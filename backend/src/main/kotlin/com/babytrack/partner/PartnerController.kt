@@ -1,6 +1,8 @@
 package com.babytrack.partner
 
 import com.babytrack.auth.AuthenticatedUser
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
@@ -19,7 +21,13 @@ data class InviterInfoDto(val inviterName: String?, val inviterEmail: String)
 data class PartnerLinkDto(val partnerId: UUID, val partnerName: String?, val partnerEmail: String)
 data class PartnerDto(val id: UUID, val email: String, val displayName: String?)
 
-data class LinkRequest(val token: String)
+data class LinkRequest(@field:NotBlank val token: String)
+
+fun PartnerInvite.toInviteDto() = PartnerInviteDto(
+    token = token,
+    deepLink = "babytrack://partner?token=$token",
+    expiresAt = expiresAt,
+)
 
 @RestController
 @RequestMapping("/api/partner")
@@ -43,10 +51,10 @@ class PartnerController(private val partnerService: PartnerService) {
     }
 
     @PostMapping("/link")
-    fun acceptInvite(@RequestBody request: LinkRequest): ResponseEntity<PartnerLinkDto> {
+    fun acceptInvite(@Valid @RequestBody request: LinkRequest): ResponseEntity<PartnerLinkDto> {
         val user = principal()
         val dto = partnerService.acceptInvite(request.token, user.id)
-        return ResponseEntity.ok(dto)
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto)
     }
 
     @DeleteMapping

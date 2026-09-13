@@ -52,6 +52,7 @@ class PartnerService(
             ?: throw PartnerInviteNotFoundException("Invite not found")
         validateInviteActive(invite)
         val inviterId = invite.inviterId
+        require(acceptingUserId != inviterId) { "Cannot accept your own invite" }
         if (partnerLinkRepository.findByUserAIdOrUserBId(inviterId, inviterId) != null) {
             throw AlreadyLinkedException("Inviter is already linked to a partner")
         }
@@ -60,7 +61,7 @@ class PartnerService(
         }
         val (userAId, userBId) = if (inviterId < acceptingUserId) inviterId to acceptingUserId
                                   else acceptingUserId to inviterId
-        val link = partnerLinkRepository.save(PartnerLink(userAId = userAId, userBId = userBId))
+        partnerLinkRepository.save(PartnerLink(userAId = userAId, userBId = userBId))
         invite.acceptedAt = Instant.now()
         partnerInviteRepository.save(invite)
         val partner = userRepository.findById(inviterId)
@@ -83,6 +84,7 @@ class PartnerService(
     @Transactional
     fun unlink(userId: UUID) {
         partnerLinkRepository.deleteByUserId(userId)
+        partnerInviteRepository.deleteByInviterIdAndAcceptedAtIsNull(userId)
     }
 
     private fun validateInviteActive(invite: PartnerInvite) {
@@ -92,8 +94,3 @@ class PartnerService(
     }
 }
 
-fun PartnerInvite.toInviteDto() = PartnerInviteDto(
-    token = token,
-    deepLink = "babytrack://partner?token=$token",
-    expiresAt = expiresAt,
-)
