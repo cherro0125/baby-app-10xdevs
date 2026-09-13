@@ -5,4 +5,5 @@ import java.util.UUID
 
 interface ContractionRepository : JpaRepository<Contraction, UUID> {
     fun findTop200ByUserIdOrderByStartedAtDesc(userId: UUID): List<Contraction>
+    fun findTop200ByUserIdInOrderByStartedAtDesc(userIds: Collection<UUID>): List<Contraction>
 }

@@ -81,6 +81,12 @@ class PartnerService(
         return PartnerDto(id = partner.id, email = partner.email, displayName = partner.displayName)
     }
 
+    @Transactional(readOnly = true)
+    fun getPartnerId(userId: UUID): UUID? {
+        val link = partnerLinkRepository.findByUserAIdOrUserBId(userId, userId) ?: return null
+        return if (link.userAId == userId) link.userBId else link.userAId
+    }
+
     @Transactional
     fun unlink(userId: UUID) {
         partnerLinkRepository.deleteByUserId(userId)

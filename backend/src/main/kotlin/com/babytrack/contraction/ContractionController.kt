@@ -18,7 +18,7 @@ import java.time.Instant
 import java.util.UUID
 
 data class StartContractionRequest(@field:NotNull val startedAt: Instant)
-data class FinalizeContractionRequest(@field:NotNull val endedAt: Instant)
+data class UpdateContractionRequest(val startedAt: Instant?, @field:NotNull val endedAt: Instant)
 
 data class ContractionDto(
     val id: UUID,
@@ -58,12 +58,12 @@ class ContractionController(private val contractionService: ContractionService) 
     }
 
     @PatchMapping("/{id}")
-    fun finalize(
+    fun update(
         @PathVariable id: UUID,
-        @Valid @RequestBody request: FinalizeContractionRequest,
+        @Valid @RequestBody request: UpdateContractionRequest,
     ): ResponseEntity<ContractionDto> {
         val user = principal()
-        val contraction = contractionService.finalize(id, user.id, request.endedAt)
+        val contraction = contractionService.update(id, user.id, request.startedAt, request.endedAt)
         return ResponseEntity.ok(contraction.toDto())
     }
 
@@ -71,6 +71,12 @@ class ContractionController(private val contractionService: ContractionService) 
     fun list(): ResponseEntity<List<ContractionDto>> {
         val user = principal()
         return ResponseEntity.ok(contractionService.list(user.id).map { it.toDto() })
+    }
+
+    @GetMapping("/shared")
+    fun shared(): ResponseEntity<List<ContractionDto>> {
+        val user = principal()
+        return ResponseEntity.ok(contractionService.listShared(user.id).map { it.toDto() })
     }
 
     @DeleteMapping("/{id}")
