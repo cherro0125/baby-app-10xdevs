@@ -3,6 +3,9 @@ package com.babytrack.config
 import com.babytrack.auth.InvalidGoogleTokenException
 import com.babytrack.auth.InvalidJwtException
 import com.babytrack.contraction.ContractionNotFoundException
+import com.babytrack.partner.AlreadyLinkedException
+import com.babytrack.partner.PartnerInviteExpiredException
+import com.babytrack.partner.PartnerInviteNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
@@ -34,6 +37,30 @@ class GlobalExceptionHandler {
         ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
             type = URI.create("urn:babytrack:error:contraction-not-found")
             title = "Contraction Not Found"
+            detail = ex.message
+        }
+
+    @ExceptionHandler(PartnerInviteNotFoundException::class)
+    fun handlePartnerInviteNotFound(ex: PartnerInviteNotFoundException): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
+            type = URI.create("urn:babytrack:error:invite-not-found")
+            title = "Invite Not Found"
+            detail = ex.message
+        }
+
+    @ExceptionHandler(PartnerInviteExpiredException::class)
+    fun handlePartnerInviteExpired(ex: PartnerInviteExpiredException): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.GONE).apply {
+            type = URI.create("urn:babytrack:error:invite-expired")
+            title = "Invite Expired"
+            detail = ex.message
+        }
+
+    @ExceptionHandler(AlreadyLinkedException::class)
+    fun handleAlreadyLinked(ex: AlreadyLinkedException): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.CONFLICT).apply {
+            type = URI.create("urn:babytrack:error:already-linked")
+            title = "Already Linked"
             detail = ex.message
         }
 

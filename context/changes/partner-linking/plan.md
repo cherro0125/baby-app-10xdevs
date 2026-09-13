@@ -276,16 +276,16 @@ Add code-entry to the Partner tab for manually entering a partner's code, handle
 ### Phase 1: Backend — migrations, service, controller
 
 #### Automated
-- [ ] 1.1 ./gradlew bootRun starts; V3 migration applies cleanly
-- [ ] 1.2 POST /api/partner/invite → 201 with token and deepLink
-- [ ] 1.3 GET /api/partner/invite/{token} → inviter name/email
-- [ ] 1.4 POST /api/partner/link → 200; second call → 409
-- [ ] 1.5 GET /api/partner → partner info when linked, 404 when not
-- [ ] 1.6 DELETE /api/partner → 204; both sides return 404 after
+- [x] 1.1 ./gradlew bootRun starts; V3 migration applies cleanly
+- [x] 1.2 POST /api/partner/invite → 201 with token and deepLink
+- [x] 1.3 GET /api/partner/invite/{token} → inviter name/email
+- [x] 1.4 POST /api/partner/link → 200; second call → 409
+- [x] 1.5 GET /api/partner → partner info when linked, 404 when not
+- [x] 1.6 DELETE /api/partner → 204; both sides return 404 after
 
 #### Manual
-- [ ] 1.7 V3 migration visible in startup logs; both tables exist in DB
-- [ ] 1.8 Expired token returns 410
+- [x] 1.7 V3 migration visible in startup logs; both tables exist in DB
+- [x] 1.8 Expired token returns 410
 
 ### Phase 2: Frontend — Partner tab + invite generation
 
