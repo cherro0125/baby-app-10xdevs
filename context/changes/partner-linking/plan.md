@@ -290,24 +290,24 @@ Add code-entry to the Partner tab for manually entering a partner's code, handle
 ### Phase 2: Frontend — Partner tab + invite generation
 
 #### Automated
-- [x] 2.1 npm run lint passes
-- [x] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes — e271b90
+- [x] 2.2 TypeScript compiles — e271b90
 
 #### Manual
-- [x] 2.3 Partner tab appears in tab bar
-- [x] 2.4 Invite your partner shows code + share button
-- [x] 2.5 Share button opens system share sheet with babytrack:// link
+- [x] 2.3 Partner tab appears in tab bar — e271b90
+- [x] 2.4 Invite your partner shows code + share button — e271b90
+- [x] 2.5 Share button opens system share sheet with babytrack:// link — e271b90
 
 ### Phase 3: Frontend — accept-invite flow
 
 #### Automated
-- [ ] 3.1 npm run lint passes
-- [ ] 3.2 TypeScript compiles
+- [x] 3.1 npm run lint passes
+- [x] 3.2 TypeScript compiles
 
 #### Manual
-- [ ] 3.3 Valid code entry → confirmation screen with inviter name/email
-- [ ] 3.4 Invalid code → "Code not found" error
-- [ ] 3.5 Accept → Partner tab shows linked state
-- [ ] 3.6 Decline → returns to invite-generation view
-- [ ] 3.7 Deep link opens confirmation screen directly
-- [ ] 3.8 Expired token deep link → "This invite has expired"
+- [x] 3.3 Valid code entry → confirmation screen with inviter name/email
+- [x] 3.4 Invalid code → "Code not found" error
+- [x] 3.5 Accept → Partner tab shows linked state
+- [x] 3.6 Decline → returns to invite-generation view
+- [x] 3.7 Deep link opens confirmation screen directly
+- [x] 3.8 Expired token deep link → "This invite has expired"
