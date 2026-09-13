@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ContractionList } from '@/components/contraction-list';
 import { ContractionTimer } from '@/components/contraction-timer';
+import { FiveOneOneBanner } from '@/components/five-one-one-banner';
 import { IncompleteContractionModal } from '@/components/incomplete-contraction-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -11,6 +12,7 @@ import { TimeEditSheet } from '@/components/time-edit-sheet';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { LocalContraction } from '@/db/types';
 import { useContractions } from '@/hooks/use-contractions';
+import { computeFiveOneOne } from '@/utils/five-one-one';
 
 export default function ContractionsScreen() {
   const { contractions, activeContraction, isLoading, initialActiveId, start, finalize, remove, edit } =
@@ -89,6 +91,7 @@ export default function ContractionsScreen() {
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>
+          <FiveOneOneBanner status={computeFiveOneOne(contractions).status} />
           <ContractionTimer
             key={activeContraction?.id ?? 'none'}
             active={activeContraction}

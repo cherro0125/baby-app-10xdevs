@@ -393,8 +393,8 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 6: 5-1-1 signal + E2E gate
 
 #### Automated
-- [ ] 6.1 npm run lint passes
-- [ ] 6.2 TypeScript compiles
+- [x] 6.1 npm run lint passes
+- [x] 6.2 TypeScript compiles
 
 #### Manual
 - [ ] 6.3 FR-1: timer starts

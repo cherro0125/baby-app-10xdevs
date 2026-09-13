@@ -89,6 +89,11 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: Co
           <ThemedText type="small" themeColor="textSecondary">
             {formatDuration(contraction.durationSeconds)} · {formatGap(gapSeconds)}
           </ThemedText>
+          {contraction.note ? (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              {contraction.note}
+            </ThemedText>
+          ) : null}
         </Pressable>
         {contraction.strength !== null && (
           <ThemedView type="backgroundSelected" style={styles.strengthBadge}>
