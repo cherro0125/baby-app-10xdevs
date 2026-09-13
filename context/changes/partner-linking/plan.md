@@ -301,13 +301,13 @@ Add code-entry to the Partner tab for manually entering a partner's code, handle
 ### Phase 3: Frontend — accept-invite flow
 
 #### Automated
-- [x] 3.1 npm run lint passes
-- [x] 3.2 TypeScript compiles
+- [x] 3.1 npm run lint passes — 73a00c9
+- [x] 3.2 TypeScript compiles — 73a00c9
 
 #### Manual
-- [x] 3.3 Valid code entry → confirmation screen with inviter name/email
-- [x] 3.4 Invalid code → "Code not found" error
-- [x] 3.5 Accept → Partner tab shows linked state
-- [x] 3.6 Decline → returns to invite-generation view
-- [x] 3.7 Deep link opens confirmation screen directly
-- [x] 3.8 Expired token deep link → "This invite has expired"
+- [x] 3.3 Valid code entry → confirmation screen with inviter name/email — 73a00c9
+- [x] 3.4 Invalid code → "Code not found" error — 73a00c9
+- [x] 3.5 Accept → Partner tab shows linked state — 73a00c9
+- [x] 3.6 Decline → returns to invite-generation view — 73a00c9
+- [x] 3.7 Deep link opens confirmation screen directly — 73a00c9
+- [x] 3.8 Expired token deep link → "This invite has expired" — 73a00c9
