@@ -32,6 +32,7 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: Co
   const theme = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function handleDeletePress() {
     swipeableRef.current?.close();
@@ -43,7 +44,15 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: Co
       <ThemedView type="backgroundElement" style={styles.row}>
         <Pressable
           style={styles.confirmAction}
-          onPress={() => onDelete(contraction.id).catch(() => setConfirming(false))}>
+          disabled={deleting}
+          onPress={() => {
+            if (deleting) return;
+            setDeleting(true);
+            onDelete(contraction.id).catch(() => {
+              setDeleting(false);
+              setConfirming(false);
+            });
+          }}>
           <ThemedText type="smallBold" themeColor="danger">
             Confirm delete?
           </ThemedText>

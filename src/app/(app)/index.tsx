@@ -67,9 +67,9 @@ export default function ContractionsScreen() {
     id: string,
     patch: { startedAt?: Date; endedAt?: Date },
   ) {
-    setEditTarget(null);
     try {
       await edit(id, patch);
+      setEditTarget(null);
     } catch (e) {
       console.error('[ContractionsScreen] edit failed', e);
     }

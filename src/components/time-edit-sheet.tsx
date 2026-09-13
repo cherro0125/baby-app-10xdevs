@@ -15,7 +15,7 @@ interface TimeEditSheetProps {
 
 export function TimeEditSheet({ contraction, onClose, onConfirm }: TimeEditSheetProps) {
   return (
-    <Modal visible={contraction !== null} transparent animationType="slide">
+    <Modal visible={contraction !== null} transparent animationType="slide" onRequestClose={onClose}>
       {contraction && (
         <TimeEditSheetInner
           key={contraction.id}
@@ -44,16 +44,34 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
   const endDate = contraction.endedAt ? new Date(contraction.endedAt) : null;
   const [endH, setEndH] = useState(() => endDate?.getHours() ?? 0);
   const [endM, setEndM] = useState(() => endDate?.getMinutes() ?? 0);
+  const [error, setError] = useState<string | null>(null);
+
+  const isActive = !contraction.endedAt;
 
   function handleConfirm() {
-    const newStart = new Date(contraction.startedAt);
-    newStart.setHours(startH, startM, 0, 0);
-    const patch: { startedAt: Date; endedAt?: Date } = { startedAt: newStart };
+    const patch: { startedAt?: Date; endedAt?: Date } = {};
+    // Backend PATCH only accepts endedAt; startedAt can only be edited on finished contractions.
+    if (!isActive) {
+      const newStart = new Date(contraction.startedAt);
+      newStart.setHours(startH, startM, 0, 0);
+      patch.startedAt = newStart;
+    }
     if (endDate) {
+      const refStart = patch.startedAt ?? new Date(contraction.startedAt);
       const newEnd = new Date(contraction.endedAt!);
       newEnd.setHours(endH, endM, 0, 0);
+      // Midnight crossing: if editing hours pushed end to before start, advance by one day.
+      // Assumes contractions are < 24h (valid for labor contraction timing).
+      if (newEnd < refStart) {
+        newEnd.setDate(newEnd.getDate() + 1);
+      }
+      if (newEnd <= refStart) {
+        setError('End must be after start');
+        return;
+      }
       patch.endedAt = newEnd;
     }
+    setError(null);
     onConfirm(contraction.id, patch);
   }
 
@@ -64,17 +82,34 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
           Edit times
         </ThemedText>
 
-        <TimeRow
-          label="Start"
-          h={startH}
-          m={startM}
-          onChangeH={setStartH}
-          onChangeM={setStartM}
-        />
+        {isActive ? (
+          <View style={styles.timeRow}>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.timeLabel}>
+              Start
+            </ThemedText>
+            <ThemedText type="smallBold">
+              {new Date(contraction.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary"> (stop first to edit)</ThemedText>
+          </View>
+        ) : (
+          <TimeRow
+            label="Start"
+            h={startH}
+            m={startM}
+            onChangeH={setStartH}
+            onChangeM={setStartM}
+          />
+        )}
         {endDate && (
           <TimeRow label="End" h={endH} m={endM} onChangeH={setEndH} onChangeM={setEndM} />
         )}
 
+        {error && (
+          <ThemedText type="small" themeColor="danger" style={styles.error}>
+            {error}
+          </ThemedText>
+        )}
         <View style={styles.actions}>
           <Pressable
             style={[styles.actionButton, { backgroundColor: theme.backgroundElement }]}
@@ -183,6 +218,9 @@ const styles = StyleSheet.create({
     width: 32,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
+  },
+  error: {
+    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',

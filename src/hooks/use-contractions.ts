@@ -160,6 +160,9 @@ export function useContractions(): UseContractionsResult {
       if (!existing) return;
       const newStartedAt = patch.startedAt?.toISOString() ?? existing.startedAt;
       const newEndedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
+      if (newEndedAt && newEndedAt <= newStartedAt) {
+        throw new Error('endedAt must be after startedAt');
+      }
       const newDuration =
         newEndedAt ? computeDuration(newStartedAt, newEndedAt) : null;
       const now = nowIso();

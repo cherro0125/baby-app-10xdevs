@@ -27,7 +27,7 @@ Full implementation of S-03 contraction tracking: backend REST API, local SQLite
 5. **5-1-1 computation**: Frontend only for S-03
 6. **Crash recovery**: "Incomplete contraction" prompt on launch when an endedAt=null row exists in SQLite
 7. **Strength scale**: 1-10 numeric
-8. **Manual time entry**: Native DateTimePicker (from `@react-native-community/datetimepicker`)
+8. **Manual time entry**: Custom H:M stepper (`@react-native-community/datetimepicker` is not in node_modules; stepper is cross-platform and avoids a native rebuild)
 9. **Delete UX**: Swipe-to-delete with second-tap confirmation (Reanimated + Gesture Handler)
 10. **Explore tab**: Removed entirely
 11. **5-1-1 signal**: Persistent status banner at top of log screen; "May be time to go to the hospital" copy when threshold met
@@ -381,8 +381,8 @@ Implement the 5-1-1 detection algorithm on the frontend and show a persistent st
 ### Phase 5: Manual time entry + crash recovery
 
 #### Automated
-- [x] 5.1 npm run lint passes
-- [x] 5.2 TypeScript compiles
+- [x] 5.1 npm run lint passes — 3f5998c
+- [x] 5.2 TypeScript compiles — 3f5998c
 
 #### Manual
 - [ ] 5.3 Incomplete contraction modal appears on relaunch
