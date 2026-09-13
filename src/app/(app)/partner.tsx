@@ -14,6 +14,7 @@ export default function PartnerScreen() {
   const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
 
   const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [unlinkPending, setUnlinkPending] = useState(false);
 
   // Code-entry state
@@ -92,11 +93,13 @@ export default function PartnerScreen() {
   }
 
   async function handleGenerateInvite() {
+    setInviteError(null);
     try {
       const result = await generateInvite();
       setInvite({ token: result.token, deepLink: result.deepLink });
     } catch (e) {
       console.error('[PartnerScreen] generateInvite failed', e);
+      setInviteError("Couldn't generate invite. Please try again.");
     }
   }
 
@@ -205,9 +208,14 @@ export default function PartnerScreen() {
               </Pressable>
             </ThemedView>
           ) : (
-            <Pressable style={styles.buttonPrimary} onPress={handleGenerateInvite}>
-              <ThemedText type="default" style={styles.bold}>Invite your partner</ThemedText>
-            </Pressable>
+            <>
+              <Pressable style={styles.buttonPrimary} onPress={handleGenerateInvite}>
+                <ThemedText type="default" style={styles.bold}>Invite your partner</ThemedText>
+              </Pressable>
+              {inviteError ? (
+                <ThemedText type="small" style={styles.errorText}>{inviteError}</ThemedText>
+              ) : null}
+            </>
           )}
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.divider}>

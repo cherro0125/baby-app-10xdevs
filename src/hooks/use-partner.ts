@@ -108,7 +108,7 @@ export function usePartner(): UsePartnerResult {
 
   async function unlink(): Promise<void> {
     const res = await api().request('/api/partner', { method: 'DELETE' });
-    if (!res.ok && res.status !== 204) {
+    if (!res.ok) {
       throw new Error(`unlink failed: ${res.status}`);
     }
     setPartner(null);
