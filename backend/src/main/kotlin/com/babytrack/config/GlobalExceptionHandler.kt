@@ -4,6 +4,7 @@ import com.babytrack.auth.InvalidGoogleTokenException
 import com.babytrack.auth.InvalidJwtException
 import com.babytrack.contraction.ContractionNotFoundException
 import com.babytrack.feeding.FeedingNotFoundException
+import com.babytrack.sleep.SleepNotFoundException
 import com.babytrack.partner.AlreadyLinkedException
 import com.babytrack.partner.PartnerInviteExpiredException
 import com.babytrack.partner.PartnerInviteNotFoundException
@@ -46,6 +47,14 @@ class GlobalExceptionHandler {
         ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
             type = URI.create("urn:babytrack:error:feeding-not-found")
             title = "Feeding Not Found"
+            detail = ex.message
+        }
+
+    @ExceptionHandler(SleepNotFoundException::class)
+    fun handleSleepNotFound(ex: SleepNotFoundException): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
+            type = URI.create("urn:babytrack:error:sleep-not-found")
+            title = "Sleep Not Found"
             detail = ex.message
         }
 
