@@ -33,7 +33,7 @@ BabyTrack gives a woman in active labor and her partner a shared, real-time view
 | S-01 | google-auth                    | sign in with Google and sign out; app remembers session across restarts                                           | F-01          | FR-001, FR-003, FR-004, US-01               | done     |
 | S-02 | partner-linking                | invite a partner via share link/code, accept an invite, and unlink                                                | S-01          | FR-005, FR-007, FR-008, US-01               | done     |
 | S-03 | contraction-tracking           | log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries | S-01          | FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, US-01, Business Logic | done     |
-| S-04 | real-time-shared-contractions  | see a partner's contraction entries appear on-screen within seconds; see who logged each entry; edit or delete any entry | S-02, S-03    | FR-022, FR-023, FR-024, US-01               | proposed |
+| S-04 | real-time-shared-contractions  | see a partner's contraction entries appear on-screen within seconds; see who logged each entry; edit or delete any entry | S-02, S-03    | FR-022, FR-023, FR-024, US-01               | done     |
 | S-05 | feeding-log                    | log a feeding event (type, amount, description); view feeding history; partner sees it in real time               | S-04          | FR-016, FR-017, FR-022, FR-023, FR-024, US-01 | proposed |
 | S-06 | sleep-log                      | log a sleep session (start/end); view sleep history; partner sees it in real time                                 | S-04          | FR-018, FR-019, FR-022, FR-023, FR-024, US-01 | proposed |
 | S-07 | medicine-log                   | log a medicine event (time, name, amount, reason); view medicine log; partner sees it in real time                | S-04          | FR-020, FR-021, FR-022, FR-023, FR-024, US-01 | proposed |
@@ -129,7 +129,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
   - Polling interval for near-real-time sync. PRD specifies "a few seconds"; a 3–5s poll interval is the planned mechanism (confirmed in infra research: no WebSocket required). Owner: dev. Block: no.
   - Push notification for contraction logged by partner (secondary success criterion, implied FR-025). If confirmed must-have before launch, add as FR-025 and include in this slice or create S-04b. Owner: user. Block: no for this slice, but the Open Roadmap Question must be resolved before final MVP scope is locked.
 - **Risk:** This is the north star — the first moment the product's core thesis is verifiable. If S-02 (partner linking) or S-03 (contraction data) are incomplete, this slice cannot proceed. Sequence bias: prioritize unblocking S-04 over any polish on S-05–S-07.
-- **Status:** proposed
+- **Status:** done
 
 ---
 
@@ -212,6 +212,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 ## Done
 
 - **F-01: (foundation) Spring Boot backend deployed to Cloud Run; Google OAuth token validation; user accounts; JWT sessions; PostgreSQL user schema** — Archived 2026-07-10 → `context/archive/2026-06-27-backend-bootstrap/`. Lesson: —.
+- **S-04: When one partner logs a contraction, the other partner's contraction log screen updates within a few seconds without manual refresh. Each entry shows which partner created it. Either partner can edit or delete any entry in the shared log.** — Archived 2026-09-14 → `context/archive/2026-09-14-real-time-shared-contractions/`. Lesson: —.
 - **S-01: User can sign in with Google and sign out. The app stores the JWT session token securely and restores auth state on app restart without requiring the user to sign in again. All UI is available in English and Polish (i18n infrastructure established here for all subsequent slices).** — Archived 2026-09-11 → `context/archive/2026-07-10-google-auth/`. Lesson: —.
 - **S-03: User can log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries** — Archived 2026-09-13 → `context/archive/2026-09-11-contraction-tracking/`. Lesson: —.
 - **S-02: invite a partner via share link/code, accept an invite, and unlink** — Archived 2026-09-14 → `context/archive/2026-09-13-partner-linking/`. Lesson: —.
