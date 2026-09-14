@@ -3,6 +3,8 @@ package com.babytrack.feeding
 import com.babytrack.auth.AuthenticatedUser
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
@@ -21,18 +23,16 @@ data class CreateFeedingRequest(
     @field:NotNull val startedAt: Instant,
     @field:NotNull val endedAt: Instant,
     @field:NotNull val milkType: MilkType,
-    val durationMinutes: Int? = null,
-    val amountMl: Int? = null,
-    val note: String? = null,
+    @field:Positive val amountMl: Int? = null,
+    @field:Size(max = 2000) val note: String? = null,
 )
 
 data class UpdateFeedingRequest(
     val startedAt: Instant? = null,
     val endedAt: Instant? = null,
     val milkType: MilkType? = null,
-    val durationMinutes: Int? = null,
-    val amountMl: Int? = null,
-    val note: String? = null,
+    @field:Positive val amountMl: Int? = null,
+    @field:Size(max = 2000) val note: String? = null,
 )
 
 data class FeedingDto(
@@ -75,7 +75,6 @@ class FeedingController(private val feedingService: FeedingService) {
             startedAt = request.startedAt,
             endedAt = request.endedAt,
             milkType = request.milkType,
-            durationMinutes = request.durationMinutes,
             amountMl = request.amountMl,
             note = request.note,
         )
@@ -85,7 +84,7 @@ class FeedingController(private val feedingService: FeedingService) {
     @PatchMapping("/{id}")
     fun update(
         @PathVariable id: UUID,
-        @RequestBody request: UpdateFeedingRequest,
+        @Valid @RequestBody request: UpdateFeedingRequest,
     ): ResponseEntity<FeedingDto> {
         val user = principal()
         val feeding = feedingService.update(
@@ -94,7 +93,6 @@ class FeedingController(private val feedingService: FeedingService) {
             startedAt = request.startedAt,
             endedAt = request.endedAt,
             milkType = request.milkType,
-            durationMinutes = request.durationMinutes,
             amountMl = request.amountMl,
             note = request.note,
         )

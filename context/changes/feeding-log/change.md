@@ -1,7 +1,7 @@
 ---
 change_id: feeding-log
 title: Feeding log
-status: implementing
+status: impl_reviewed
 created: 2026-09-14
 updated: 2026-09-14
 archived_at: null

@@ -5,6 +5,7 @@ import com.babytrack.user.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -19,7 +20,6 @@ class FeedingService(
         startedAt: Instant,
         endedAt: Instant,
         milkType: MilkType,
-        durationMinutes: Int?,
         amountMl: Int?,
         note: String?,
     ): Feeding {
@@ -30,7 +30,7 @@ class FeedingService(
             milkType = milkType,
             startedAt = startedAt,
             endedAt = endedAt,
-            durationMinutes = durationMinutes,
+            durationMinutes = ChronoUnit.MINUTES.between(startedAt, endedAt).toInt(),
             amountMl = amountMl,
             note = note,
         )
@@ -44,7 +44,6 @@ class FeedingService(
         startedAt: Instant?,
         endedAt: Instant?,
         milkType: MilkType?,
-        durationMinutes: Int?,
         amountMl: Int?,
         note: String?,
     ): Feeding {
@@ -60,9 +59,9 @@ class FeedingService(
         if (startedAt != null) feeding.startedAt = startedAt
         if (endedAt != null) feeding.endedAt = endedAt
         if (milkType != null) feeding.milkType = milkType
-        if (durationMinutes != null) feeding.durationMinutes = durationMinutes
         if (amountMl != null) feeding.amountMl = amountMl
         if (note != null) feeding.note = note
+        feeding.durationMinutes = ChronoUnit.MINUTES.between(effectiveStartedAt, effectiveEndedAt).toInt()
         feeding.updatedAt = Instant.now()
         return feedingRepository.save(feeding)
     }

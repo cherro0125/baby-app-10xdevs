@@ -378,15 +378,15 @@ The Flyway V5 migration is additive (no `ALTER TABLE` on existing tables) — no
 
 #### Automated
 
-- [x] 1.1 `./gradlew bootRun` starts; V5 migration appears in startup logs
-- [x] 1.2 POST /api/feedings → 201 with FeedingDto
-- [x] 1.3 GET /api/feedings/shared → 200 with list
+- [x] 1.1 `./gradlew bootRun` starts; V5 migration appears in startup logs — 33bbb9a
+- [x] 1.2 POST /api/feedings → 201 with FeedingDto — 33bbb9a
+- [x] 1.3 GET /api/feedings/shared → 200 with list — 33bbb9a
 
 #### Manual
 
-- [x] 1.4 Create feeding via curl, verify it appears in GET /api/feedings
-- [x] 1.5 Non-partner edit attempt → 404
-- [x] 1.6 Two linked users: user A creates feeding → user B's shared feed includes it
+- [x] 1.4 Create feeding via curl, verify it appears in GET /api/feedings — 33bbb9a
+- [x] 1.5 Non-partner edit attempt → 404 — 33bbb9a
+- [x] 1.6 Two linked users: user A creates feeding → user B's shared feed includes it — 33bbb9a
 
 ### Phase 2: Frontend — local DB table + use-feedings hook
 
