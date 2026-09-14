@@ -10,6 +10,8 @@ interface ContractionListProps {
   contractions: LocalContraction[];
   onDelete: (id: string) => Promise<void>;
   onEdit: (contraction: LocalContraction) => void;
+  currentUserId?: string;
+  partnerLabel?: string | null;
 }
 
 function gapSecondsToPrevious(contractions: LocalContraction[], index: number): number | null {
@@ -21,7 +23,7 @@ function gapSecondsToPrevious(contractions: LocalContraction[], index: number): 
   );
 }
 
-export function ContractionList({ contractions, onDelete, onEdit }: ContractionListProps) {
+export function ContractionList({ contractions, onDelete, onEdit, currentUserId, partnerLabel }: ContractionListProps) {
   if (contractions.length === 0) {
     return (
       <ThemedView style={styles.empty}>
@@ -41,6 +43,7 @@ export function ContractionList({ contractions, onDelete, onEdit }: ContractionL
           gapSeconds={gapSecondsToPrevious(contractions, index)}
           onDelete={onDelete}
           onEdit={onEdit}
+          authorLabel={item.userId === currentUserId ? 'You' : (partnerLabel ?? null)}
         />
       ))}
     </View>

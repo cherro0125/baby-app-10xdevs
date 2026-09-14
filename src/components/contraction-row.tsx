@@ -13,6 +13,7 @@ interface ContractionRowProps {
   gapSeconds: number | null;
   onDelete: (id: string) => Promise<void>;
   onEdit: (contraction: LocalContraction) => void;
+  authorLabel?: string | null;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -28,7 +29,7 @@ function formatGap(seconds: number | null): string {
   return `${m} min apart`;
 }
 
-export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: ContractionRowProps) {
+export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit, authorLabel }: ContractionRowProps) {
   const theme = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const [confirming, setConfirming] = useState(false);
@@ -89,6 +90,11 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit }: Co
           <ThemedText type="small" themeColor="textSecondary">
             {formatDuration(contraction.durationSeconds)} · {formatGap(gapSeconds)}
           </ThemedText>
+          {authorLabel ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {authorLabel}
+            </ThemedText>
+          ) : null}
           {contraction.note ? (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
               {contraction.note}

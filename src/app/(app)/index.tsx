@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useSession } from '@/auth/session-provider';
+
 import { ContractionList } from '@/components/contraction-list';
 import { ContractionTimer } from '@/components/contraction-timer';
 import { FiveOneOneBanner } from '@/components/five-one-one-banner';
@@ -12,11 +14,15 @@ import { TimeEditSheet } from '@/components/time-edit-sheet';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { LocalContraction } from '@/db/types';
 import { useContractions } from '@/hooks/use-contractions';
+import { usePartner } from '@/hooks/use-partner';
 import { computeFiveOneOne } from '@/utils/five-one-one';
 
 export default function ContractionsScreen() {
+  const { user } = useSession();
+  const { partner } = usePartner();
+  const partnerLabel = partner ? (partner.displayName ?? partner.email) : null;
   const { contractions, activeContraction, isLoading, initialActiveId, start, finalize, remove, edit } =
-    useContractions(false);
+    useContractions(partner !== null);
 
   const [modalDismissed, setModalDismissed] = useState(false);
   const [editTarget, setEditTarget] = useState<LocalContraction | null>(null);
@@ -102,6 +108,8 @@ export default function ContractionsScreen() {
             contractions={contractions}
             onDelete={remove}
             onEdit={setEditTarget}
+            currentUserId={partner !== null ? (user?.id ?? '') : undefined}
+            partnerLabel={partnerLabel}
           />
         </ThemedView>
       </ScrollView>

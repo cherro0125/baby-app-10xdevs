@@ -321,24 +321,24 @@ contraction row. Pass the combined list (own + partner) to `computeFiveOneOne`.
 
 #### Automated
 
-- [x] 2.1 Lint passes (`npm run lint`)
+- [x] 2.1 Lint passes (`npm run lint`) — ef24c11
 
 #### Manual
 
-- [x] 2.2 Partner's new contraction appears on screen within 10s (no refresh)
-- [x] 2.3 Solo device: no polling API calls, unchanged behavior
-- [x] 2.4 Edit partner contraction: change visible on partner's device within 10s
-- [x] 2.5 Delete partner contraction: disappears from both devices within 10s
-- [x] 2.6 Offline partner edit shows error rather than silently failing
+- [x] 2.2 Partner's new contraction appears on screen within 10s (no refresh) — ef24c11
+- [x] 2.3 Solo device: no polling API calls, unchanged behavior — ef24c11
+- [x] 2.4 Edit partner contraction: change visible on partner's device within 10s — ef24c11
+- [x] 2.5 Delete partner contraction: disappears from both devices within 10s — ef24c11
+- [x] 2.6 Offline partner edit shows error rather than silently failing — ef24c11
 
 ### Phase 3: Frontend — attribution UI
 
 #### Automated
 
-- [ ] 3.1 Lint passes (`npm run lint`)
+- [x] 3.1 Lint passes (`npm run lint`)
 
 #### Manual
 
-- [ ] 3.2 Own entries labeled "You"; partner entries labeled with partner's name/email
-- [ ] 3.3 Solo device: no attribution label on any row
-- [ ] 3.4 5-1-1 banner updates when partner logs a qualifying contraction
+- [x] 3.2 Own entries labeled "You"; partner entries labeled with partner's name/email
+- [x] 3.3 Solo device: no attribution label on any row
+- [x] 3.4 5-1-1 banner updates when partner logs a qualifying contraction
