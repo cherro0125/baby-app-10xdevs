@@ -25,6 +25,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   function signOut() {
+    if (session) {
+      fetch(`${BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session}` },
+      }).catch(() => {});
+    }
     GoogleSignin.signOut().catch(() => {});
     Promise.all([
       SecureStore.deleteItemAsync(SESSION_KEY),
