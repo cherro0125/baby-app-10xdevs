@@ -3,6 +3,7 @@ package com.babytrack.config
 import com.babytrack.auth.InvalidGoogleTokenException
 import com.babytrack.auth.InvalidJwtException
 import com.babytrack.contraction.ContractionNotFoundException
+import com.babytrack.feeding.FeedingNotFoundException
 import com.babytrack.partner.AlreadyLinkedException
 import com.babytrack.partner.PartnerInviteExpiredException
 import com.babytrack.partner.PartnerInviteNotFoundException
@@ -37,6 +38,14 @@ class GlobalExceptionHandler {
         ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
             type = URI.create("urn:babytrack:error:contraction-not-found")
             title = "Contraction Not Found"
+            detail = ex.message
+        }
+
+    @ExceptionHandler(FeedingNotFoundException::class)
+    fun handleFeedingNotFound(ex: FeedingNotFoundException): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.NOT_FOUND).apply {
+            type = URI.create("urn:babytrack:error:feeding-not-found")
+            title = "Feeding Not Found"
             detail = ex.message
         }
 
