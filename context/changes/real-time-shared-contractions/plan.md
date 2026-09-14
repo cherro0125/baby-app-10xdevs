@@ -335,10 +335,10 @@ contraction row. Pass the combined list (own + partner) to `computeFiveOneOne`.
 
 #### Automated
 
-- [x] 3.1 Lint passes (`npm run lint`)
+- [x] 3.1 Lint passes (`npm run lint`) — bc3bfa2
 
 #### Manual
 
-- [x] 3.2 Own entries labeled "You"; partner entries labeled with partner's name/email
-- [x] 3.3 Solo device: no attribution label on any row
-- [x] 3.4 5-1-1 banner updates when partner logs a qualifying contraction
+- [x] 3.2 Own entries labeled "You"; partner entries labeled with partner's name/email — bc3bfa2
+- [x] 3.3 Solo device: no attribution label on any row — bc3bfa2
+- [x] 3.4 5-1-1 banner updates when partner logs a qualifying contraction — bc3bfa2
