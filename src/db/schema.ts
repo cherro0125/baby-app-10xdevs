@@ -21,6 +21,20 @@ export async function runMigrations(db: AppDatabase): Promise<void> {
       synced INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS feedings (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      milk_type TEXT,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      duration_minutes INTEGER,
+      amount_ml INTEGER,
+      note TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      synced INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id TEXT PRIMARY KEY,
       operation TEXT NOT NULL,

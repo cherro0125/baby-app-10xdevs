@@ -392,8 +392,8 @@ The Flyway V5 migration is additive (no `ALTER TABLE` on existing tables) — no
 
 #### Automated
 
-- [ ] 2.1 npm run lint passes
-- [ ] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes
+- [x] 2.2 TypeScript compiles
 
 ### Phase 3: Frontend — feeding tab screen + UI components + tab registration
 
