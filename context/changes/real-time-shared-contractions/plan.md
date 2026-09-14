@@ -305,31 +305,31 @@ contraction row. Pass the combined list (own + partner) to `computeFiveOneOne`.
 
 #### Automated
 
-- [x] 1.1 Backend starts without errors (`./gradlew bootRun`)
-- [x] 1.2 Existing tests pass (`./gradlew test`)
-- [x] 1.3 Lint passes (`npm run lint` or Kotlin linter)
+- [x] 1.1 Backend starts without errors (`./gradlew bootRun`) — a9296f2
+- [x] 1.2 Existing tests pass (`./gradlew test`) — a9296f2
+- [x] 1.3 Lint passes (`npm run lint` or Kotlin linter) — a9296f2
 
 #### Manual
 
-- [x] 1.4 GET /api/contractions/shared returns combined entries for linked partners
-- [x] 1.5 GET /api/contractions/shared returns own-only entries for unlinked users
-- [x] 1.6 PATCH by partner JWT updates contraction; stranger JWT returns 404
-- [x] 1.7 DELETE by partner JWT returns 204; stranger JWT returns 404
-- [x] 1.8 PATCH on already-finalized contraction updates times (no early-return)
+- [x] 1.4 GET /api/contractions/shared returns combined entries for linked partners — a9296f2
+- [x] 1.5 GET /api/contractions/shared returns own-only entries for unlinked users — a9296f2
+- [x] 1.6 PATCH by partner JWT updates contraction; stranger JWT returns 404 — a9296f2
+- [x] 1.7 DELETE by partner JWT returns 204; stranger JWT returns 404 — a9296f2
+- [x] 1.8 PATCH on already-finalized contraction updates times (no early-return) — a9296f2
 
 ### Phase 2: Frontend — data layer (polling + shared sync)
 
 #### Automated
 
-- [ ] 2.1 Lint passes (`npm run lint`)
+- [x] 2.1 Lint passes (`npm run lint`)
 
 #### Manual
 
-- [ ] 2.2 Partner's new contraction appears on screen within 10s (no refresh)
-- [ ] 2.3 Solo device: no polling API calls, unchanged behavior
-- [ ] 2.4 Edit partner contraction: change visible on partner's device within 10s
-- [ ] 2.5 Delete partner contraction: disappears from both devices within 10s
-- [ ] 2.6 Offline partner edit shows error rather than silently failing
+- [x] 2.2 Partner's new contraction appears on screen within 10s (no refresh)
+- [x] 2.3 Solo device: no polling API calls, unchanged behavior
+- [x] 2.4 Edit partner contraction: change visible on partner's device within 10s
+- [x] 2.5 Delete partner contraction: disappears from both devices within 10s
+- [x] 2.6 Offline partner edit shows error rather than silently failing
 
 ### Phase 3: Frontend — attribution UI
 

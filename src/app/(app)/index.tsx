@@ -16,7 +16,7 @@ import { computeFiveOneOne } from '@/utils/five-one-one';
 
 export default function ContractionsScreen() {
   const { contractions, activeContraction, isLoading, initialActiveId, start, finalize, remove, edit } =
-    useContractions();
+    useContractions(false);
 
   const [modalDismissed, setModalDismissed] = useState(false);
   const [editTarget, setEditTarget] = useState<LocalContraction | null>(null);
