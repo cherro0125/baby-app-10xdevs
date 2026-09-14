@@ -22,9 +22,22 @@ function computeDuration(startedAt: string, endedAt: string): number {
   return Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000);
 }
 
+const CONTRACTION_COLS = `
+  id,
+  user_id AS userId,
+  started_at AS startedAt,
+  ended_at AS endedAt,
+  duration_seconds AS durationSeconds,
+  strength,
+  note,
+  created_at AS createdAt,
+  updated_at AS updatedAt,
+  synced
+`;
+
 async function loadContractions(db: AppDatabase): Promise<LocalContraction[]> {
   return db.getAllAsync<LocalContraction>(
-    'SELECT * FROM contractions ORDER BY started_at DESC LIMIT 200',
+    `SELECT ${CONTRACTION_COLS} FROM contractions ORDER BY started_at DESC LIMIT 200`,
   );
 }
 
@@ -240,7 +253,7 @@ export function useContractions(hasPartner: boolean): UseContractionsResult {
     if (!db || !user) return;
     try {
       const existing = await db.getFirstAsync<LocalContraction>(
-        'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
+        `SELECT ${CONTRACTION_COLS} FROM contractions WHERE id = ? AND user_id = ?`,
         [id, user.id.toString()],
       );
       if (!existing) return;
@@ -298,7 +311,7 @@ export function useContractions(hasPartner: boolean): UseContractionsResult {
       if (!isOwn) {
         // Partner entry: direct API PATCH (online-only, no sync queue)
         const existing = await db.getFirstAsync<LocalContraction>(
-          'SELECT * FROM contractions WHERE id = ?',
+          `SELECT ${CONTRACTION_COLS} FROM contractions WHERE id = ?`,
           [id],
         );
         if (!existing) return;
@@ -323,7 +336,7 @@ export function useContractions(hasPartner: boolean): UseContractionsResult {
       }
       // Own entry: local-first flow
       const existing = await db.getFirstAsync<LocalContraction>(
-        'SELECT * FROM contractions WHERE id = ? AND user_id = ?',
+        `SELECT ${CONTRACTION_COLS} FROM contractions WHERE id = ? AND user_id = ?`,
         [id, myUserId],
       );
       if (!existing) return;
