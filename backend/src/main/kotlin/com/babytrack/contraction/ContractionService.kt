@@ -42,7 +42,7 @@ class ContractionService(
     fun listShared(userId: UUID): List<Contraction> {
         val partnerId = partnerService.getPartnerId(userId)
         return if (partnerId != null) {
-            contractionRepository.findTop200ByUserIdInOrderByStartedAtDesc(listOf(userId, partnerId))
+            contractionRepository.findTop200ByUserIdOrUserIdOrderByStartedAtDesc(userId, partnerId)
         } else {
             contractionRepository.findTop200ByUserIdOrderByStartedAtDesc(userId)
         }

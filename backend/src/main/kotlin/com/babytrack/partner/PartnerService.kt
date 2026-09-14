@@ -75,14 +75,15 @@ class PartnerService(
 
     @Transactional(readOnly = true)
     fun getPartnerStatus(userId: UUID): PartnerDto? {
-        val link = partnerLinkRepository.findByUserAIdOrUserBId(userId, userId) ?: return null
-        val partnerId = if (link.userAId == userId) link.userBId else link.userAId
+        val partnerId = resolvePartnerId(userId) ?: return null
         val partner = userRepository.findById(partnerId).orElse(null) ?: return null
         return PartnerDto(id = partner.id, email = partner.email, displayName = partner.displayName)
     }
 
     @Transactional(readOnly = true)
-    fun getPartnerId(userId: UUID): UUID? {
+    fun getPartnerId(userId: UUID): UUID? = resolvePartnerId(userId)
+
+    private fun resolvePartnerId(userId: UUID): UUID? {
         val link = partnerLinkRepository.findByUserAIdOrUserBId(userId, userId) ?: return null
         return if (link.userAId == userId) link.userBId else link.userAId
     }
