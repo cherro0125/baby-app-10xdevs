@@ -1,10 +1,10 @@
 ---
 change_id: feeding-log
 title: Feeding log
-status: implemented
+status: archived
 created: 2026-09-14
 updated: 2026-09-14
-archived_at: null
+archived_at: 2026-09-14T12:50:04Z
 ---
 
 ## Notes
