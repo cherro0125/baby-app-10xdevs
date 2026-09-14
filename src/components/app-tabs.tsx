@@ -19,6 +19,13 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="feeding-log">
+        <NativeTabs.Trigger.Label>Feeding</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/home.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="partner">
         <NativeTabs.Trigger.Label>Partner</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

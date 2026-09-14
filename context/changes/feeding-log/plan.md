@@ -392,21 +392,21 @@ The Flyway V5 migration is additive (no `ALTER TABLE` on existing tables) — no
 
 #### Automated
 
-- [x] 2.1 npm run lint passes
-- [x] 2.2 TypeScript compiles
+- [x] 2.1 npm run lint passes — bebbda9
+- [x] 2.2 TypeScript compiles — bebbda9
 
 ### Phase 3: Frontend — feeding tab screen + UI components + tab registration
 
 #### Automated
 
-- [ ] 3.1 npm run lint passes
-- [ ] 3.2 TypeScript compiles
+- [x] 3.1 npm run lint passes
+- [x] 3.2 TypeScript compiles
 
 #### Manual
 
-- [ ] 3.3 Feeding tab appears between Contractions and Partner
-- [ ] 3.4 Start → timer counts up; Stop → completion sheet opens and saves entry
-- [ ] 3.5 Crash-recovery modal works after force-close with active feeding
-- [ ] 3.6 Partner sync: feeding created on device A appears on device B within ~5 seconds
-- [ ] 3.7 Either partner can delete or time-edit any entry
-- [ ] 3.8 No regressions on Contractions tab or Partner tab
+- [x] 3.3 Feeding tab appears between Contractions and Partner
+- [x] 3.4 Start → timer counts up; Stop → completion sheet opens and saves entry
+- [x] 3.5 Crash-recovery modal works after force-close with active feeding
+- [x] 3.6 Partner sync: feeding created on device A appears on device B within ~5 seconds
+- [x] 3.7 Either partner can delete or time-edit any entry
+- [x] 3.8 No regressions on Contractions tab or Partner tab
