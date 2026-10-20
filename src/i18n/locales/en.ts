@@ -8,4 +8,10 @@ export default {
       network: 'No internet connection.',
     },
   },
+  format: {
+    minSec: '{{m}}m {{s}}s',
+    min: '{{m}}m',
+    hMin: '{{h}}h {{m}}m',
+    ml: '{{amount}} ml',
+  },
 } as const;
