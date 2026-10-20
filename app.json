@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.babytrack.app",
+      "bundleIdentifier": "com.dominik.babytrack",
+      "appleTeamId": "836W6VADAQ",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -50,7 +51,16 @@
       "expo-secure-store",
       "expo-localization",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
+      "./plugins/with-ios27-fixes"
     ],
     "experiments": {
       "typedRoutes": true,
