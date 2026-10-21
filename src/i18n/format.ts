@@ -1,16 +1,26 @@
 import type { TFunction } from 'i18next';
+import { getLocales } from 'expo-localization';
+
+// Keep the device's regional clock (e.g. en-GB → 24h) when the device speaks the app language.
+export function clockLocale(lng: string, deviceTag: string | null | undefined): string {
+  if (deviceTag && deviceTag.toLowerCase().split('-')[0] === lng) return deviceTag;
+  return lng;
+}
 
 export function formatClockTime(date: Date | number, lng: string): string {
-  return new Date(date).toLocaleTimeString(lng, { hour: '2-digit', minute: '2-digit' });
+  const locale = clockLocale(lng, getLocales()[0]?.languageTag);
+  return new Date(date).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatDurationSeconds(t: TFunction, seconds: number): string {
-  return t('format.minSec', { m: Math.floor(seconds / 60), s: seconds % 60 });
+  const total = Math.round(seconds);
+  return t('format.minSec', { m: Math.floor(total / 60), s: total % 60 });
 }
 
 export function formatDurationMinutes(t: TFunction, minutes: number): string {
-  if (minutes < 60) return t('format.min', { m: minutes });
-  return t('format.hMin', { h: Math.floor(minutes / 60), m: minutes % 60 });
+  const total = Math.round(minutes);
+  if (total < 60) return t('format.min', { m: total });
+  return t('format.hMin', { h: Math.floor(total / 60), m: total % 60 });
 }
 
 export function formatMl(t: TFunction, amount: number): string {

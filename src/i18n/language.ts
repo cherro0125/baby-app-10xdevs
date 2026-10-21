@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import { changeLanguage } from 'i18next';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -31,7 +31,7 @@ export function getSavedLanguage(): AppLanguage | null {
 }
 
 export async function setAppLanguage(lng: AppLanguage): Promise<void> {
-  await i18n.changeLanguage(lng);
+  await changeLanguage(lng);
   if (Platform.OS === 'web') return;
   try {
     await SecureStore.setItemAsync(LANGUAGE_STORAGE_KEY, lng);

@@ -79,7 +79,7 @@ Make i18n switchable and typed, add language resolution/persistence and locale-a
 
 **Intent**: `en.ts` remains the source of truth; `pl.ts` must have exactly the same keys with string values; `t()` keys are type-checked.
 
-**Contract**: `types.ts` exports `TranslationShape` = `en` with every leaf widened to `string` (recursive mapped type) and `AppLanguage = 'en' | 'pl'`, `SUPPORTED_LANGUAGES`. `pl.ts` exports `const pl: TranslationShape`. `i18next.d.ts` augments `CustomTypeOptions` with `defaultNS: 'translation'` and `resources: { translation: typeof en }`. Phase 1 seeds `pl.ts` with the existing `signIn.*` keys plus the `common.*` / `settings.*` / `tabs.*` / `format.*` keys introduced in phases 1–2.
+**Contract**: `types.ts` exports `TranslationShape` = `en` with every leaf widened to `string` (recursive mapped type) and `AppLanguage = 'en' | 'pl'`, `SUPPORTED_LANGUAGES`. `pl.ts` exports `const pl: TranslationShape`. `i18next.d.ts` augments `CustomTypeOptions` with `defaultNS: 'translation'` and `resources: { translation: typeof en }`. Phase 1 seeds `signIn.*` and `format.*` in both locales; later phases add their own keys (`settings.*` / `tabs.*` in phase 2, `common.*` in phase 3, …) to both `en.ts` and `pl.ts`.
 
 #### 3. Language resolution and switching
 
@@ -347,13 +347,13 @@ No data migration. Existing users without a saved preference keep today's behavi
 
 #### Automated
 
-- [x] 1.1 Jest runs and all tests pass
-- [x] 1.2 Type checking passes
-- [x] 1.3 Linting passes
+- [x] 1.1 Jest runs and all tests pass — e18d83f
+- [x] 1.2 Type checking passes — e18d83f
+- [x] 1.3 Linting passes — e18d83f
 
 #### Manual
 
-- [x] 1.4 App still launches on iPhone and sign-in screen shows in the device language (no visible regression)
+- [x] 1.4 App still launches on iPhone and sign-in screen shows in the device language (no visible regression) — e18d83f
 
 ### Phase 2: Settings tab with language switch
 
