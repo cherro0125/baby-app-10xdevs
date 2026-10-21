@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { useSession } from '@/auth/session-provider';
 
@@ -18,6 +19,7 @@ import { usePartner } from '@/hooks/use-partner';
 import { computeFiveOneOne } from '@/utils/five-one-one';
 
 export default function ContractionsScreen() {
+  const { t } = useTranslation();
   const { user } = useSession();
   const { partner } = usePartner();
   const partnerLabel = partner ? (partner.displayName ?? partner.email) : null;
@@ -39,7 +41,7 @@ export default function ContractionsScreen() {
     return (
       <ThemedView style={styles.loading}>
         <ThemedText type="small" themeColor="textSecondary">
-          Loading…
+          {t('common.loading')}
         </ThemedText>
       </ThemedView>
     );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -20,6 +21,7 @@ function formatElapsed(seconds: number): string {
 }
 
 export function FeedingTimer({ active, onStart, onStop }: FeedingTimerProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [elapsed, setElapsed] = useState(() =>
     active ? Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000) : 0,
@@ -39,7 +41,7 @@ export function FeedingTimer({ active, onStart, onStop }: FeedingTimerProps) {
       <ThemedView style={styles.container}>
         <Pressable onPress={onStart} style={[styles.startButton, { backgroundColor: theme.text }]}>
           <ThemedText type="smallBold" style={{ color: theme.background }}>
-            Start Feeding
+            {t('feeding.startButton')}
           </ThemedText>
         </Pressable>
       </ThemedView>
@@ -51,7 +53,7 @@ export function FeedingTimer({ active, onStart, onStop }: FeedingTimerProps) {
       <ThemedText style={styles.elapsed}>{formatElapsed(elapsed)}</ThemedText>
       <Pressable onPress={() => onStop(new Date())} style={[styles.stopButton, { backgroundColor: theme.danger }]}>
         <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
-          Stop
+          {t('common.stop')}
         </ThemedText>
       </Pressable>
     </ThemedView>

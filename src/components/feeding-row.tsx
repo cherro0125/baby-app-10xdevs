@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
+import { MILK_TYPE_KEYS } from '@/components/milk-types';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import type { LocalFeeding, MilkType } from '@/db/types';
 import { useTheme } from '@/hooks/use-theme';
+import { formatClockTime, formatDurationMinutes, formatMl } from '@/i18n/format';
 
 interface FeedingRowProps {
   feeding: LocalFeeding;
@@ -23,20 +27,13 @@ const MILK_TYPE_COLORS: Record<MilkType, string> = {
   OTHER: '#9E9E9E',
 };
 
-const MILK_TYPE_LABELS: Record<MilkType, string> = {
-  BREAST: 'Breast',
-  FORMULA: 'Formula',
-  PUMPED: 'Pumped',
-  OTHER: 'Other',
-};
-
-function formatDuration(minutes: number | null): string {
+function formatDuration(t: TFunction, minutes: number | null): string {
   if (minutes === null) return '—';
-  if (minutes < 60) return `${minutes}m`;
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return formatDurationMinutes(t, minutes);
 }
 
 export function FeedingRow({ feeding, onDelete, onEdit, currentUserId, partnerLabel }: FeedingRowProps) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const [confirming, setConfirming] = useState(false);
@@ -72,12 +69,12 @@ export function FeedingRow({ feeding, onDelete, onEdit, currentUserId, partnerLa
             });
           }}>
           <ThemedText type="smallBold" themeColor="danger">
-            Confirm delete?
+            {t('common.confirmDelete')}
           </ThemedText>
         </Pressable>
         <Pressable style={styles.confirmAction} onPress={() => setConfirming(false)}>
           <ThemedText type="small" themeColor="textSecondary">
-            Cancel
+            {t('common.cancel')}
           </ThemedText>
         </Pressable>
       </ThemedView>
@@ -92,21 +89,18 @@ export function FeedingRow({ feeding, onDelete, onEdit, currentUserId, partnerLa
           onPress={handleDeletePress}
           style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
           <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
-            Delete
+            {t('common.delete')}
           </ThemedText>
         </Pressable>
       )}>
       <ThemedView type="backgroundElement" style={styles.row}>
         <Pressable style={styles.rowMain} onPress={() => onEdit(feeding)}>
           <ThemedText type="smallBold">
-            {new Date(feeding.startedAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {formatClockTime(new Date(feeding.startedAt), i18n.language)}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {formatDuration(feeding.durationMinutes)}
-            {feeding.amountMl != null ? ` · ${feeding.amountMl} ml` : ''}
+            {formatDuration(t, feeding.durationMinutes)}
+            {feeding.amountMl != null ? ` · ${formatMl(t, feeding.amountMl)}` : ''}
           </ThemedText>
           {authorLabel ? (
             <ThemedText type="small" themeColor="textSecondary">
@@ -129,7 +123,7 @@ export function FeedingRow({ feeding, onDelete, onEdit, currentUserId, partnerLa
                 fontSize: 10,
                 fontWeight: '600',
               }}>
-              {MILK_TYPE_LABELS[feeding.milkType].slice(0, 3).toUpperCase()}
+              {t(`feeding.milkTypeShort.${MILK_TYPE_KEYS[feeding.milkType]}`)}
             </ThemedText>
           </View>
         ) : null}

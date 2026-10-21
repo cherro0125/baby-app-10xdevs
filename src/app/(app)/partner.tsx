@@ -2,26 +2,29 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { InviterInfoDto } from '@/hooks/use-partner';
 import { usePartner } from '@/hooks/use-partner';
-import { useSession } from '@/auth/session-provider';
+
+type CodeError = 'expired' | 'notFound' | 'codeLength' | 'alreadyLinked' | 'generic';
 
 export default function PartnerScreen() {
+  const { t } = useTranslation();
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
   const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
-  const { signOut } = useSession();
 
   const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteFailed, setInviteFailed] = useState(false);
   const [unlinkPending, setUnlinkPending] = useState(false);
 
   // Code-entry state
   const [codeInput, setCodeInput] = useState('');
-  const [codeError, setCodeError] = useState<string | null>(null);
+  // Keys, not text: translated at render so a language switch updates a visible error.
+  const [codeError, setCodeError] = useState<CodeError | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
 
   // Confirmation view state
@@ -46,9 +49,9 @@ export default function PartnerScreen() {
     } catch (e: unknown) {
       const status = (e as { status?: number }).status;
       if (status === 410) {
-        setCodeError('This invite has expired.');
+        setCodeError('expired');
       } else {
-        setCodeError('Code not found.');
+        setCodeError('notFound');
       }
     } finally {
       setCodeLoading(false);
@@ -58,7 +61,7 @@ export default function PartnerScreen() {
   async function handleCodeSubmit() {
     const code = codeInput.trim().toUpperCase();
     if (code.length !== 8) {
-      setCodeError('Enter the full 8-character code.');
+      setCodeError('codeLength');
       return;
     }
     await handleLookupToken(code);
@@ -81,11 +84,11 @@ export default function PartnerScreen() {
     } catch (e: unknown) {
       const status = (e as { status?: number }).status;
       if (status === 409) {
-        setCodeError('One of you is already linked to someone else.');
+        setCodeError('alreadyLinked');
       } else if (status === 410) {
-        setCodeError('This invite has expired.');
+        setCodeError('expired');
       } else {
-        setCodeError('Something went wrong. Please try again.');
+        setCodeError('generic');
       }
       setPendingToken(null);
       setInviterInfo(null);
@@ -95,13 +98,13 @@ export default function PartnerScreen() {
   }
 
   async function handleGenerateInvite() {
-    setInviteError(null);
+    setInviteFailed(false);
     try {
       const result = await generateInvite();
       setInvite({ token: result.token, deepLink: result.deepLink });
     } catch (e) {
       console.error('[PartnerScreen] generateInvite failed', e);
-      setInviteError("Couldn't generate invite. Please try again.");
+      setInviteFailed(true);
     }
   }
 
@@ -127,7 +130,7 @@ export default function PartnerScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.center}>
-        <ThemedText type="small" themeColor="textSecondary">Loading…</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">{t('common.loading')}</ThemedText>
       </ThemedView>
     );
   }
@@ -137,12 +140,7 @@ export default function PartnerScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <ThemedView style={styles.titleRow}>
-            <ThemedText type="title">Partner</ThemedText>
-            <Pressable onPress={signOut} hitSlop={8}>
-              <ThemedText type="small" themeColor="textSecondary">Sign out</ThemedText>
-            </Pressable>
-          </ThemedView>
+          <ThemedText type="title" style={styles.title}>{t('partner.title')}</ThemedText>
           <ThemedView style={styles.card}>
             <ThemedText type="default" style={styles.bold}>{partner.displayName ?? partner.email}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">{partner.email}</ThemedText>
@@ -151,20 +149,20 @@ export default function PartnerScreen() {
           {unlinkPending ? (
             <ThemedView style={styles.confirmRow}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.confirmText}>
-                Are you sure? This removes the link for both of you.
+                {t('partner.unlinkConfirm')}
               </ThemedText>
               <ThemedView style={styles.buttonRow}>
                 <Pressable style={styles.buttonDestructive} onPress={handleConfirmUnlink}>
-                  <ThemedText type="default" style={styles.bold}>Confirm</ThemedText>
+                  <ThemedText type="default" style={styles.bold}>{t('common.confirm')}</ThemedText>
                 </Pressable>
                 <Pressable style={styles.buttonSecondary} onPress={() => setUnlinkPending(false)}>
-                  <ThemedText type="default">Cancel</ThemedText>
+                  <ThemedText type="default">{t('common.cancel')}</ThemedText>
                 </Pressable>
               </ThemedView>
             </ThemedView>
           ) : (
             <Pressable style={styles.buttonSecondary} onPress={() => setUnlinkPending(true)}>
-              <ThemedText type="default">Unlink</ThemedText>
+              <ThemedText type="default">{t('partner.unlink')}</ThemedText>
             </Pressable>
           )}
         </ThemedView>
@@ -177,7 +175,7 @@ export default function PartnerScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <ThemedText type="title">Link with partner?</ThemedText>
+          <ThemedText type="title">{t('partner.linkPrompt')}</ThemedText>
           <ThemedView style={styles.card}>
             <ThemedText type="default" style={styles.bold}>
               {inviterInfo.inviterName ?? inviterInfo.inviterEmail}
@@ -187,11 +185,11 @@ export default function PartnerScreen() {
           <ThemedView style={styles.buttonRow}>
             <Pressable style={[styles.buttonPrimary, styles.flex1]} onPress={handleAccept} disabled={acceptLoading}>
               <ThemedText type="default" style={styles.bold}>
-                {acceptLoading ? 'Linking…' : 'Accept'}
+                {acceptLoading ? t('partner.linking') : t('partner.accept')}
               </ThemedText>
             </Pressable>
             <Pressable style={[styles.buttonSecondary, styles.flex1]} onPress={handleDecline}>
-              <ThemedText type="default">Decline</ThemedText>
+              <ThemedText type="default">{t('partner.decline')}</ThemedText>
             </Pressable>
           </ThemedView>
         </ThemedView>
@@ -204,41 +202,36 @@ export default function PartnerScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>
-          <ThemedView style={styles.titleRow}>
-            <ThemedText type="title">Partner</ThemedText>
-            <Pressable onPress={signOut} hitSlop={8}>
-              <ThemedText type="small" themeColor="textSecondary">Sign out</ThemedText>
-            </Pressable>
-          </ThemedView>
+          <ThemedText type="title" style={styles.title}>{t('partner.title')}</ThemedText>
 
           {invite ? (
             <ThemedView style={styles.inviteCard}>
-              <ThemedText type="small" themeColor="textSecondary">Your invite code</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">{t('partner.inviteCode')}</ThemedText>
               <ThemedText style={styles.code}>{invite.token}</ThemedText>
               <Pressable style={styles.buttonPrimary} onPress={handleShare}>
-                <ThemedText type="default" style={styles.bold}>Share invite link</ThemedText>
+                <ThemedText type="default" style={styles.bold}>{t('partner.shareInvite')}</ThemedText>
               </Pressable>
             </ThemedView>
           ) : (
             <>
               <Pressable style={styles.buttonPrimary} onPress={handleGenerateInvite}>
-                <ThemedText type="default" style={styles.bold}>Invite your partner</ThemedText>
+                <ThemedText type="default" style={styles.bold}>{t('partner.invite')}</ThemedText>
               </Pressable>
-              {inviteError ? (
-                <ThemedText type="small" style={styles.errorText}>{inviteError}</ThemedText>
+              {inviteFailed ? (
+                <ThemedText type="small" style={styles.errorText}>{t('partner.errors.inviteFailed')}</ThemedText>
               ) : null}
             </>
           )}
 
           <ThemedText type="small" themeColor="textSecondary" style={styles.divider}>
-            {'— or enter a partner’s code —'}
+            {t('partner.orEnterCode')}
           </ThemedText>
 
           <ThemedView style={styles.codeEntryRow}>
             <TextInput
               style={styles.codeInput}
               value={codeInput}
-              onChangeText={(t) => { setCodeInput(t.toUpperCase()); setCodeError(null); }}
+              onChangeText={(text) => { setCodeInput(text.toUpperCase()); setCodeError(null); }}
               placeholder="ABCD1234"
               autoCapitalize="characters"
               maxLength={8}
@@ -249,14 +242,14 @@ export default function PartnerScreen() {
               onPress={handleCodeSubmit}
               disabled={codeLoading}>
               <ThemedText type="default" style={styles.bold}>
-                {codeLoading ? '…' : 'Link'}
+                {codeLoading ? '…' : t('partner.link')}
               </ThemedText>
             </Pressable>
           </ThemedView>
 
           {codeError ? (
             <ThemedText type="small" themeColor="textSecondary" style={styles.errorText}>
-              {codeError}
+              {t(`partner.errors.${codeError}`)}
             </ThemedText>
           ) : null}
 
@@ -269,6 +262,8 @@ export default function PartnerScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Left-aligned like the Settings title.
+  title: { alignSelf: 'flex-start' },
   scrollContent: { flexGrow: 1 },
   container: {
     flex: 1,
@@ -366,11 +361,5 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: '700',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
   },
 });

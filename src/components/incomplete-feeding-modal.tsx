@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -16,29 +17,30 @@ export function IncompleteFeedingModal({
   onContinue,
   onEndNow,
 }: IncompleteFeedingModalProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <ThemedView style={styles.card}>
           <ThemedText type="smallBold" style={styles.centred}>
-            Feeding in progress
+            {t('feeding.incomplete.title')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.centred}>
-            It looks like a feeding was left running. What would you like to do?
+            {t('feeding.incomplete.body')}
           </ThemedText>
           <Pressable
             style={[styles.button, { backgroundColor: theme.text }]}
             onPress={onContinue}>
             <ThemedText type="smallBold" style={{ color: theme.background }}>
-              Continue timing
+              {t('common.continueTiming')}
             </ThemedText>
           </Pressable>
           <Pressable
             style={[styles.button, { backgroundColor: theme.danger }]}
             onPress={onEndNow}>
             <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
-              End now
+              {t('common.endNow')}
             </ThemedText>
           </Pressable>
         </ThemedView>

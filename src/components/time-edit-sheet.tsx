@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import type { LocalContraction } from '@/db/types';
 import { useTheme } from '@/hooks/use-theme';
+import { formatClockTime } from '@/i18n/format';
 
 interface TimeEditSheetProps {
   contraction: LocalContraction | null;
@@ -35,6 +37,7 @@ interface InnerProps {
 }
 
 function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   // Lazy initialisers: constructing from a known ISO string is deterministic (not impure)
   const startDate = new Date(contraction.startedAt);
@@ -44,7 +47,7 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
   const endDate = contraction.endedAt ? new Date(contraction.endedAt) : null;
   const [endH, setEndH] = useState(() => endDate?.getHours() ?? 0);
   const [endM, setEndM] = useState(() => endDate?.getMinutes() ?? 0);
-  const [error, setError] = useState<string | null>(null);
+  const [endBeforeStart, setEndBeforeStart] = useState(false);
 
   const isActive = !contraction.endedAt;
 
@@ -66,12 +69,12 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
         newEnd.setDate(newEnd.getDate() + 1);
       }
       if (newEnd <= refStart) {
-        setError('End must be after start');
+        setEndBeforeStart(true);
         return;
       }
       patch.endedAt = newEnd;
     }
-    setError(null);
+    setEndBeforeStart(false);
     onConfirm(contraction.id, patch);
   }
 
@@ -79,22 +82,24 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
     <View style={styles.overlay}>
       <ThemedView style={styles.sheet}>
         <ThemedText type="smallBold" style={styles.title}>
-          Edit times
+          {t('timeEdit.title')}
         </ThemedText>
 
         {isActive ? (
           <View style={styles.timeRow}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.timeLabel}>
-              Start
+              {t('common.start')}
             </ThemedText>
             <ThemedText type="smallBold">
-              {new Date(contraction.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {formatClockTime(new Date(contraction.startedAt), i18n.language)}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary"> (stop first to edit)</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              {t('timeEdit.stopFirst')}
+            </ThemedText>
           </View>
         ) : (
           <TimeRow
-            label="Start"
+            label={t('common.start')}
             h={startH}
             m={startM}
             onChangeH={setStartH}
@@ -102,25 +107,25 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
           />
         )}
         {endDate && (
-          <TimeRow label="End" h={endH} m={endM} onChangeH={setEndH} onChangeM={setEndM} />
+          <TimeRow label={t('common.end')} h={endH} m={endM} onChangeH={setEndH} onChangeM={setEndM} />
         )}
 
-        {error && (
+        {endBeforeStart && (
           <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {error}
+            {t('timeEdit.endAfterStart')}
           </ThemedText>
         )}
         <View style={styles.actions}>
           <Pressable
             style={[styles.actionButton, { backgroundColor: theme.backgroundElement }]}
             onPress={onClose}>
-            <ThemedText type="small">Cancel</ThemedText>
+            <ThemedText type="small">{t('common.cancel')}</ThemedText>
           </Pressable>
           <Pressable
             style={[styles.actionButton, { backgroundColor: theme.text }]}
             onPress={handleConfirm}>
             <ThemedText type="smallBold" style={{ color: theme.background }}>
-              Confirm
+              {t('common.confirm')}
             </ThemedText>
           </Pressable>
         </View>
@@ -199,8 +204,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
+  // Wide enough for the Polish labels ("Początek").
   timeLabel: {
-    width: 40,
+    width: 72,
+  },
+  // Lets the longer Polish hint wrap instead of running off narrow screens.
+  hint: {
+    flexShrink: 1,
   },
   stepper: {
     flexDirection: 'row',

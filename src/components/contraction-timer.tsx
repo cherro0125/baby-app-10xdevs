@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -22,6 +23,7 @@ function formatElapsed(seconds: number): string {
 const STRENGTH_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export function ContractionTimer({ active, onStart, onStop }: ContractionTimerProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   // lazy initialiser reads Date.now() once at mount (not in render) — satisfies purity rules
   // parent passes key={active?.id ?? 'none'} so this mounts fresh for each contraction
@@ -49,7 +51,7 @@ export function ContractionTimer({ active, onStart, onStop }: ContractionTimerPr
       <ThemedView style={styles.container}>
         <Pressable onPress={onStart} style={[styles.startButton, { backgroundColor: theme.text }]}>
           <ThemedText type="smallBold" style={{ color: theme.background }}>
-            Start Contraction
+            {t('contractions.startButton')}
           </ThemedText>
         </Pressable>
       </ThemedView>
@@ -62,7 +64,7 @@ export function ContractionTimer({ active, onStart, onStop }: ContractionTimerPr
 
       <ThemedView style={styles.strengthSection}>
         <ThemedText type="small" themeColor="textSecondary">
-          Strength
+          {t('contractions.strength')}
         </ThemedText>
         <ThemedView style={styles.pips}>
           {STRENGTH_LEVELS.map((n) => (
@@ -91,7 +93,7 @@ export function ContractionTimer({ active, onStart, onStop }: ContractionTimerPr
             backgroundColor: theme.backgroundElement,
           },
         ]}
-        placeholder="Add a note…"
+        placeholder={t('common.addNote')}
         placeholderTextColor={theme.textSecondary}
         value={note}
         onChangeText={setNote}
@@ -100,7 +102,7 @@ export function ContractionTimer({ active, onStart, onStop }: ContractionTimerPr
 
       <Pressable onPress={handleStop} style={[styles.stopButton, { backgroundColor: theme.danger }]}>
         <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
-          Stop
+          {t('common.stop')}
         </ThemedText>
       </Pressable>
     </ThemedView>

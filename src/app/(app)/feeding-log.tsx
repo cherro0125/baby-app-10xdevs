@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { useSession } from '@/auth/session-provider';
 
@@ -17,6 +18,7 @@ import { useFeedings } from '@/hooks/use-feedings';
 import { usePartner } from '@/hooks/use-partner';
 
 export default function FeedingLogScreen() {
+  const { t } = useTranslation();
   const { user } = useSession();
   const { partner } = usePartner();
   const partnerLabel = partner ? (partner.displayName ?? partner.email) : null;
@@ -37,7 +39,7 @@ export default function FeedingLogScreen() {
     return (
       <ThemedView style={styles.loading}>
         <ThemedText type="small" themeColor="textSecondary">
-          Loading…
+          {t('common.loading')}
         </ThemedText>
       </ThemedView>
     );

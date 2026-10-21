@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -9,13 +10,14 @@ interface FiveOneOneBannerProps {
   status: FiveOneOneStatus;
 }
 
-const LABELS: Record<FiveOneOneStatus, string> = {
-  idle: 'No contractions yet',
-  tracking: 'Contractions recorded — keep timing',
-  alert: 'Pattern detected — may be time to go to the hospital',
-};
+const LABEL_KEYS = {
+  idle: 'contractions.banner.none',
+  tracking: 'contractions.banner.recording',
+  alert: 'contractions.banner.goNow',
+} as const satisfies Record<FiveOneOneStatus, string>;
 
 export function FiveOneOneBanner({ status }: FiveOneOneBannerProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   const bg =
@@ -31,7 +33,7 @@ export function FiveOneOneBanner({ status }: FiveOneOneBannerProps) {
   return (
     <View style={[styles.banner, { backgroundColor: bg }]}>
       <ThemedText type="small" style={[styles.label, { color: textColor }]}>
-        {LABELS[status]}
+        {t(LABEL_KEYS[status])}
       </ThemedText>
     </View>
   );
