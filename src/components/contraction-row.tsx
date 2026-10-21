@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import type { LocalContraction } from '@/db/types';
 import { useTheme } from '@/hooks/use-theme';
+import { formatClockTime, formatDurationSeconds } from '@/i18n/format';
 
 interface ContractionRowProps {
   contraction: LocalContraction;
@@ -16,20 +19,18 @@ interface ContractionRowProps {
   authorLabel?: string | null;
 }
 
-function formatDuration(seconds: number | null): string {
+function formatDuration(t: TFunction, seconds: number | null): string {
   if (seconds === null) return '—';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m ${s}s`;
+  return formatDurationSeconds(t, seconds);
 }
 
-function formatGap(seconds: number | null): string {
-  if (seconds === null) return 'first logged';
-  const m = Math.round(seconds / 60);
-  return `${m} min apart`;
+function formatGap(t: TFunction, seconds: number | null): string {
+  if (seconds === null) return t('contractions.firstLogged');
+  return t('contractions.apart', { min: Math.round(seconds / 60) });
 }
 
 export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit, authorLabel }: ContractionRowProps) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const [confirming, setConfirming] = useState(false);
@@ -55,12 +56,12 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit, auth
             });
           }}>
           <ThemedText type="smallBold" themeColor="danger">
-            Confirm delete?
+            {t('common.confirmDelete')}
           </ThemedText>
         </Pressable>
         <Pressable style={styles.confirmAction} onPress={() => setConfirming(false)}>
           <ThemedText type="small" themeColor="textSecondary">
-            Cancel
+            {t('common.cancel')}
           </ThemedText>
         </Pressable>
       </ThemedView>
@@ -75,20 +76,17 @@ export function ContractionRow({ contraction, gapSeconds, onDelete, onEdit, auth
           onPress={handleDeletePress}
           style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
           <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
-            Delete
+            {t('common.delete')}
           </ThemedText>
         </Pressable>
       )}>
       <ThemedView type="backgroundElement" style={styles.row}>
         <Pressable style={styles.rowMain} onPress={() => onEdit(contraction)}>
           <ThemedText type="smallBold">
-            {new Date(contraction.startedAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {formatClockTime(new Date(contraction.startedAt), i18n.language)}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {formatDuration(contraction.durationSeconds)} · {formatGap(gapSeconds)}
+            {formatDuration(t, contraction.durationSeconds)} · {formatGap(t, gapSeconds)}
           </ThemedText>
           {authorLabel ? (
             <ThemedText type="small" themeColor="textSecondary">

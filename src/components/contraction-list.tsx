@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ContractionRow } from '@/components/contraction-row';
 import { ThemedText } from '@/components/themed-text';
@@ -24,11 +25,13 @@ function gapSecondsToPrevious(contractions: LocalContraction[], index: number): 
 }
 
 export function ContractionList({ contractions, onDelete, onEdit, currentUserId, partnerLabel }: ContractionListProps) {
+  const { t } = useTranslation();
+
   if (contractions.length === 0) {
     return (
       <ThemedView style={styles.empty}>
         <ThemedText type="small" themeColor="textSecondary">
-          No contractions recorded yet
+          {t('contractions.empty')}
         </ThemedText>
       </ThemedView>
     );
@@ -43,7 +46,7 @@ export function ContractionList({ contractions, onDelete, onEdit, currentUserId,
           gapSeconds={gapSecondsToPrevious(contractions, index)}
           onDelete={onDelete}
           onEdit={onEdit}
-          authorLabel={item.userId === currentUserId ? 'You' : (partnerLabel ?? null)}
+          authorLabel={item.userId === currentUserId ? t('common.you') : (partnerLabel ?? null)}
         />
       ))}
     </View>

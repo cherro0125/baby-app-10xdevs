@@ -361,30 +361,30 @@ No data migration. Existing users without a saved preference keep today's behavi
 
 #### Automated
 
-- [x] 2.1 All tests pass
-- [x] 2.2 Type checking passes
-- [x] 2.3 Linting passes
+- [x] 2.1 All tests pass — 8e54a48
+- [x] 2.2 Type checking passes — 8e54a48
+- [x] 2.3 Linting passes — 8e54a48
 
 #### Manual
 
-- [x] 2.4 Fourth tab "Settings" with gear icon is visible on iPhone
-- [x] 2.5 Switching to Polski immediately changes tab labels and the Settings screen; switching back works
-- [x] 2.6 Language choice survives killing and relaunching the app
-- [x] 2.7 Sign out from Settings returns to the sign-in screen, which is shown in the chosen language
-- [x] 2.8 Partner screen no longer shows Sign out
+- [x] 2.4 Fourth tab "Settings" with gear icon is visible on iPhone — 8e54a48
+- [x] 2.5 Switching to Polski immediately changes tab labels and the Settings screen; switching back works — 8e54a48
+- [x] 2.6 Language choice survives killing and relaunching the app — 8e54a48
+- [x] 2.7 Sign out from Settings returns to the sign-in screen, which is shown in the chosen language — 8e54a48
+- [x] 2.8 Partner screen no longer shows Sign out — 8e54a48
 
 ### Phase 3: Migrate contractions and shared strings
 
 #### Automated
 
-- [ ] 3.1 All tests pass (including key parity)
-- [ ] 3.2 Type checking passes
-- [ ] 3.3 Linting passes
+- [x] 3.1 All tests pass (including key parity)
+- [x] 3.2 Type checking passes
+- [x] 3.3 Linting passes
 
 #### Manual
 
-- [ ] 3.4 Contractions tab fully Polish after switching: timer, strength, note placeholder, list, row (times 24h, "X min odstępu"), 5-1-1 banner states, delete confirm, edit-times sheet incl. validation error, incomplete-contraction modal
-- [ ] 3.5 Switching back to English restores all texts
+- [x] 3.4 Contractions tab fully Polish after switching: timer, strength, note placeholder, list, row (times 24h, "X min odstępu"), 5-1-1 banner states, delete confirm, edit-times sheet incl. validation error, incomplete-contraction modal
+- [x] 3.5 Switching back to English restores all texts
 
 ### Phase 4: Migrate feeding and partner, remove template leftovers
 
