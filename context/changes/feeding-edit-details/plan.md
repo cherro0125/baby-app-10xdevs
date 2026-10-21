@@ -323,12 +323,12 @@ Download now writes every own row on each sync (`INSERT OR REPLACE`) instead of 
 
 #### Automated
 
-- [x] 1.1 Backend tests pass: `cd backend && ./gradlew test`
-- [x] 1.2 Backend compiles and starts in dev profile
+- [x] 1.1 Backend tests pass: `cd backend && ./gradlew test` — 0d10e42
+- [x] 1.2 Backend compiles and starts in dev profile — 0d10e42
 
 #### Manual
 
-- [x] 1.3 PUT on a new uuid returns 201 with that id; repeating returns 200 with no second row
+- [x] 1.3 PUT on a new uuid returns 201 with that id; repeating returns 200 with no second row — 0d10e42
 
 ### Phase 2: Frontend — identity-stable feeding sync and full edit
 

@@ -8,9 +8,13 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -138,20 +142,27 @@ class FeedingServiceTest {
 
     // --- upsert ---
 
+    private fun stubInsertIfAbsent(result: Int) {
+        `when`(
+            feedingRepository.insertIfAbsent(
+                any(), any(), any(), any(), any(), any(), anyOrNull(), anyOrNull(), any(),
+            ),
+        ).thenReturn(result)
+    }
+
     @Test
-    fun `upsert on unknown id creates feeding with client id and requester as owner`() {
+    fun `upsert on unknown id inserts it with client id, requester as owner and derived duration`() {
         val id = UUID.randomUUID()
-        `when`(feedingRepository.findById(id)).thenReturn(Optional.empty())
-        `when`(userRepository.getReferenceById(userId)).thenReturn(makeUser())
-        `when`(feedingRepository.save(org.mockito.kotlin.any())).thenAnswer { it.arguments[0] as Feeding }
+        stubInsertIfAbsent(1)
+        `when`(feedingRepository.findById(id)).thenReturn(Optional.of(makeFeeding(userId)))
 
         val result = feedingService.upsert(id, userId, startedAt, endedAt, MilkType.PUMPED, 90, "Night")
 
         assertEquals(true, result.created)
-        assertEquals(id, result.feeding.id)
-        assertEquals(userId, result.feeding.userId)
-        assertEquals(30, result.feeding.durationMinutes)
-        assertEquals(90, result.feeding.amountMl)
+        verify(feedingRepository).insertIfAbsent(
+            eq(id), eq(userId), eq("PUMPED"), eq(startedAt), eq(endedAt), eq(30), eq(90), eq("Night"), any(),
+        )
+        verify(partnerService, never()).getPartnerId(any())
     }
 
     @Test
@@ -161,9 +172,10 @@ class FeedingServiceTest {
             note = "Before"
         }
         val newEnd = endedAt.plusSeconds(1800) // 60 min total
+        stubInsertIfAbsent(0)
         `when`(feedingRepository.findById(feeding.id)).thenReturn(Optional.of(feeding))
         `when`(partnerService.getPartnerId(userId)).thenReturn(null)
-        `when`(feedingRepository.save(org.mockito.kotlin.any())).thenAnswer { it.arguments[0] as Feeding }
+        `when`(feedingRepository.save(any<Feeding>())).thenAnswer { it.arguments[0] as Feeding }
 
         val result = feedingService.upsert(feeding.id, userId, startedAt, newEnd, MilkType.FORMULA, null, null)
 
@@ -177,9 +189,10 @@ class FeedingServiceTest {
     @Test
     fun `upsert by partner succeeds and keeps the original owner`() {
         val feeding = makeFeeding(userId)
+        stubInsertIfAbsent(0)
         `when`(feedingRepository.findById(feeding.id)).thenReturn(Optional.of(feeding))
         `when`(partnerService.getPartnerId(partnerId)).thenReturn(userId)
-        `when`(feedingRepository.save(org.mockito.kotlin.any())).thenAnswer { it.arguments[0] as Feeding }
+        `when`(feedingRepository.save(any<Feeding>())).thenAnswer { it.arguments[0] as Feeding }
 
         val result = feedingService.upsert(feeding.id, partnerId, startedAt, endedAt, MilkType.OTHER, null, "Partner")
 
@@ -192,12 +205,14 @@ class FeedingServiceTest {
     fun `upsert by non-partner on existing id throws FeedingNotFoundException`() {
         val feeding = makeFeeding(userId)
         val stranger = UUID.randomUUID()
+        stubInsertIfAbsent(0)
         `when`(feedingRepository.findById(feeding.id)).thenReturn(Optional.of(feeding))
         `when`(partnerService.getPartnerId(stranger)).thenReturn(null)
 
         assertThrows<FeedingNotFoundException> {
             feedingService.upsert(feeding.id, stranger, startedAt, endedAt, MilkType.BREAST, null, null)
         }
+        verify(feedingRepository, never()).save(any<Feeding>())
     }
 
     @Test

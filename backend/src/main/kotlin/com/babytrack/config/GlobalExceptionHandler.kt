@@ -10,7 +10,9 @@ import com.babytrack.partner.PartnerInviteExpiredException
 import com.babytrack.partner.PartnerInviteNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import java.net.URI
@@ -88,6 +90,16 @@ class GlobalExceptionHandler {
             type = URI.create("urn:babytrack:error:invalid-argument")
             title = "Invalid Argument"
             detail = ex.message
+        }
+
+    // Without these, malformed bodies (missing/unparseable fields) and @Valid failures
+    // would fall through to handleGeneric and surface as 500.
+    @ExceptionHandler(HttpMessageNotReadableException::class, MethodArgumentNotValidException::class)
+    fun handleInvalidRequest(ex: Exception): ProblemDetail =
+        ProblemDetail.forStatus(HttpStatus.BAD_REQUEST).apply {
+            type = URI.create("urn:babytrack:error:invalid-request")
+            title = "Invalid Request"
+            detail = "The request body is missing required fields or contains invalid values"
         }
 
     @ExceptionHandler(IllegalStateException::class)

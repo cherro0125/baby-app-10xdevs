@@ -29,6 +29,8 @@ class FeedingService(
         val user = userRepository.getReferenceById(userId)
         val feeding = Feeding(
             user = user,
+            // userId is a read-only mirror of user_id; set it so the returned DTO is correct before reload.
+            userId = userId,
             milkType = milkType,
             startedAt = startedAt,
             endedAt = endedAt,
@@ -84,22 +86,16 @@ class FeedingService(
     ): UpsertResult {
         require(endedAt.isAfter(startedAt)) { "endedAt must be after startedAt" }
         val durationMinutes = ChronoUnit.MINUTES.between(startedAt, endedAt).toInt()
-        val existing = feedingRepository.findById(id).orElse(null)
-        if (existing == null) {
-            val feeding = Feeding(
-                id = id,
-                user = userRepository.getReferenceById(requesterId),
-                // userId is a read-only mirror of user_id; set it so the returned DTO is correct before reload.
-                userId = requesterId,
-                milkType = milkType,
-                startedAt = startedAt,
-                endedAt = endedAt,
-                durationMinutes = durationMinutes,
-                amountMl = amountMl,
-                note = note,
-            )
-            return UpsertResult(feedingRepository.save(feeding), created = true)
+        // Atomic insert: overlapping PUTs for the same new id can't both create it, and a row that
+        // already exists always goes through the owner/partner check below.
+        val inserted = feedingRepository.insertIfAbsent(
+            id, requesterId, milkType.name, startedAt, endedAt, durationMinutes, amountMl, note, Instant.now(),
+        )
+        if (inserted == 1) {
+            return UpsertResult(feedingRepository.findById(id).orElseThrow(), created = true)
         }
+        val existing = feedingRepository.findById(id)
+            .orElseThrow { FeedingNotFoundException("Feeding not found") }
         val partnerId = partnerService.getPartnerId(requesterId)
         if (existing.userId != requesterId && existing.userId != partnerId) {
             throw FeedingNotFoundException("Feeding not found")
