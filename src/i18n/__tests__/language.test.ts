@@ -75,6 +75,8 @@ describe('setAppLanguage', () => {
   });
 
   it('does not reject or persist when switching fails', async () => {
+    // Works because Jest resolves i18next's CommonJS build, where language.ts's named
+    // `changeLanguage` import reads from this instance; an ESM build would bypass the spy.
     const change = jest.spyOn(i18n, 'changeLanguage').mockRejectedValueOnce(new Error('boom'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
 

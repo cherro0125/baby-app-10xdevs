@@ -39,6 +39,7 @@ interface InnerProps {
 function FeedingTimeEditSheetInner({ feeding, onClose, onConfirm }: InnerProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  // Lazy initialisers: constructing from a known ISO string is deterministic (not impure)
   const startDate = new Date(feeding.startedAt);
   const [startH, setStartH] = useState(() => startDate.getHours());
   const [startM, setStartM] = useState(() => startDate.getMinutes());
@@ -52,6 +53,7 @@ function FeedingTimeEditSheetInner({ feeding, onClose, onConfirm }: InnerProps) 
 
   function handleConfirm() {
     const patch: { startedAt?: Date; endedAt?: Date } = {};
+    // startedAt is only editable once the feeding has ended (the sheet shows it read-only while active).
     if (!isActive) {
       const newStart = new Date(feeding.startedAt);
       newStart.setHours(startH, startM, 0, 0);
@@ -61,6 +63,8 @@ function FeedingTimeEditSheetInner({ feeding, onClose, onConfirm }: InnerProps) 
       const refStart = patch.startedAt ?? new Date(feeding.startedAt);
       const newEnd = new Date(feeding.endedAt!);
       newEnd.setHours(endH, endM, 0, 0);
+      // Midnight crossing: if editing hours pushed end to before start, advance by one day.
+      // Assumes feedings are < 24h.
       if (newEnd < refStart) {
         newEnd.setDate(newEnd.getDate() + 1);
       }

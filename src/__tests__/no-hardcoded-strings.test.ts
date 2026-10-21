@@ -9,7 +9,7 @@ const SRC_DIR = path.resolve(__dirname, '..');
 // Brand name, code-format placeholder and self-named languages are intentionally literal.
 const ALLOWLIST = new Set(['BabyTrack', 'ABCD1234', 'English', 'Polski']);
 
-const TEXT_PROPS = new Set(['placeholder', 'label', 'title', 'accessibilityLabel']);
+const TEXT_PROPS = new Set(['placeholder', 'label', 'title', 'accessibilityLabel', 'accessibilityHint']);
 
 const HAS_LETTER = /\p{L}/u;
 
@@ -21,13 +21,23 @@ function listTsxFiles(dir: string): string[] {
   });
 }
 
+// Operators whose string operands can end up rendered; comparisons (===, !==, …) are skipped.
+const RENDERING_OPERATORS = new Set([
+  ts.SyntaxKind.AmpersandAmpersandToken,
+  ts.SyntaxKind.BarBarToken,
+  ts.SyntaxKind.QuestionQuestionToken,
+  ts.SyntaxKind.PlusToken,
+]);
+
 // String literals reachable from a JSX expression without passing through a function call,
 // e.g. {'text'}, {cond ? 'a' : 'b'}, {x ?? 'text'}.
 function literalsIn(expr: ts.Expression): ts.StringLiteralLike[] {
   if (ts.isStringLiteralLike(expr)) return [expr];
   if (ts.isParenthesizedExpression(expr)) return literalsIn(expr.expression);
   if (ts.isConditionalExpression(expr)) return [...literalsIn(expr.whenTrue), ...literalsIn(expr.whenFalse)];
-  if (ts.isBinaryExpression(expr)) return [...literalsIn(expr.left), ...literalsIn(expr.right)];
+  if (ts.isBinaryExpression(expr) && RENDERING_OPERATORS.has(expr.operatorToken.kind)) {
+    return [...literalsIn(expr.left), ...literalsIn(expr.right)];
+  }
   return [];
 }
 
@@ -36,6 +46,10 @@ function isOffending(text: string): boolean {
   return HAS_LETTER.test(trimmed) && !ALLOWLIST.has(trimmed);
 }
 
+// Heuristic, not full coverage. It does NOT catch literals that reach the UI outside JSX:
+// lookup maps (`LABELS[status]`), state setters (`setError('…')`), `Alert.alert`, template
+// literals with substitutions, helper return values, or anything in `.ts` files. Keep those
+// going through `t()` by review (see the i18n rule in context/foundation/lessons.md).
 export function findHardcodedStrings(fileName: string, source: string): string[] {
   const sf = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const hits: string[] = [];
@@ -77,6 +91,7 @@ describe('hardcoded-string guard', () => {
         "  <Text>{busy ? 'Saving…' : t('save')}</Text>",
         '  <Text>BabyTrack</Text>',
         "  <Text>{t('ok')} · …</Text>",
+        "  {status === 'alert' && <Text>{t('alert')}</Text>}",
         '</View>',
       ].join('\n'),
     );

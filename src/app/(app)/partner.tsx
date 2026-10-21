@@ -10,18 +10,21 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { InviterInfoDto } from '@/hooks/use-partner';
 import { usePartner } from '@/hooks/use-partner';
 
+type CodeError = 'expired' | 'notFound' | 'codeLength' | 'alreadyLinked' | 'generic';
+
 export default function PartnerScreen() {
   const { t } = useTranslation();
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
   const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
 
   const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteFailed, setInviteFailed] = useState(false);
   const [unlinkPending, setUnlinkPending] = useState(false);
 
   // Code-entry state
   const [codeInput, setCodeInput] = useState('');
-  const [codeError, setCodeError] = useState<string | null>(null);
+  // Keys, not text: translated at render so a language switch updates a visible error.
+  const [codeError, setCodeError] = useState<CodeError | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
 
   // Confirmation view state
@@ -46,9 +49,9 @@ export default function PartnerScreen() {
     } catch (e: unknown) {
       const status = (e as { status?: number }).status;
       if (status === 410) {
-        setCodeError(t('partner.errors.expired'));
+        setCodeError('expired');
       } else {
-        setCodeError(t('partner.errors.notFound'));
+        setCodeError('notFound');
       }
     } finally {
       setCodeLoading(false);
@@ -58,7 +61,7 @@ export default function PartnerScreen() {
   async function handleCodeSubmit() {
     const code = codeInput.trim().toUpperCase();
     if (code.length !== 8) {
-      setCodeError(t('partner.errors.codeLength'));
+      setCodeError('codeLength');
       return;
     }
     await handleLookupToken(code);
@@ -81,11 +84,11 @@ export default function PartnerScreen() {
     } catch (e: unknown) {
       const status = (e as { status?: number }).status;
       if (status === 409) {
-        setCodeError(t('partner.errors.alreadyLinked'));
+        setCodeError('alreadyLinked');
       } else if (status === 410) {
-        setCodeError(t('partner.errors.expired'));
+        setCodeError('expired');
       } else {
-        setCodeError(t('partner.errors.generic'));
+        setCodeError('generic');
       }
       setPendingToken(null);
       setInviterInfo(null);
@@ -95,13 +98,13 @@ export default function PartnerScreen() {
   }
 
   async function handleGenerateInvite() {
-    setInviteError(null);
+    setInviteFailed(false);
     try {
       const result = await generateInvite();
       setInvite({ token: result.token, deepLink: result.deepLink });
     } catch (e) {
       console.error('[PartnerScreen] generateInvite failed', e);
-      setInviteError(t('partner.errors.inviteFailed'));
+      setInviteFailed(true);
     }
   }
 
@@ -137,7 +140,7 @@ export default function PartnerScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <ThemedText type="title">{t('partner.title')}</ThemedText>
+          <ThemedText type="title" style={styles.title}>{t('partner.title')}</ThemedText>
           <ThemedView style={styles.card}>
             <ThemedText type="default" style={styles.bold}>{partner.displayName ?? partner.email}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">{partner.email}</ThemedText>
@@ -199,7 +202,7 @@ export default function PartnerScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>
-          <ThemedText type="title">{t('partner.title')}</ThemedText>
+          <ThemedText type="title" style={styles.title}>{t('partner.title')}</ThemedText>
 
           {invite ? (
             <ThemedView style={styles.inviteCard}>
@@ -214,8 +217,8 @@ export default function PartnerScreen() {
               <Pressable style={styles.buttonPrimary} onPress={handleGenerateInvite}>
                 <ThemedText type="default" style={styles.bold}>{t('partner.invite')}</ThemedText>
               </Pressable>
-              {inviteError ? (
-                <ThemedText type="small" style={styles.errorText}>{inviteError}</ThemedText>
+              {inviteFailed ? (
+                <ThemedText type="small" style={styles.errorText}>{t('partner.errors.inviteFailed')}</ThemedText>
               ) : null}
             </>
           )}
@@ -246,7 +249,7 @@ export default function PartnerScreen() {
 
           {codeError ? (
             <ThemedText type="small" themeColor="textSecondary" style={styles.errorText}>
-              {codeError}
+              {t(`partner.errors.${codeError}`)}
             </ThemedText>
           ) : null}
 
@@ -259,6 +262,8 @@ export default function PartnerScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Left-aligned like the Settings title.
+  title: { alignSelf: 'flex-start' },
   scrollContent: { flexGrow: 1 },
   container: {
     flex: 1,

@@ -61,6 +61,8 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
                 ]}>
                 <ThemedText
                   type="small"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                   themeColor={mt.value === milkType ? 'text' : 'textSecondary'}>
                   {t(`feeding.milkType.${mt.key}`)}
                 </ThemedText>
