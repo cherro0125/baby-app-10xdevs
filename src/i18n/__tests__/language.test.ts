@@ -73,4 +73,17 @@ describe('setAppLanguage', () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('does not reject or persist when switching fails', async () => {
+    const change = jest.spyOn(i18n, 'changeLanguage').mockRejectedValueOnce(new Error('boom'));
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await expect(setAppLanguage('pl')).resolves.toBeUndefined();
+
+    expect(i18n.language).toBe('en');
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    change.mockRestore();
+    warn.mockRestore();
+  });
 });

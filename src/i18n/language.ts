@@ -30,8 +30,15 @@ export function getSavedLanguage(): AppLanguage | null {
   }
 }
 
+// Never rejects, so callers such as onPress handlers can fire and forget.
+// The choice is persisted only once i18n has actually switched.
 export async function setAppLanguage(lng: AppLanguage): Promise<void> {
-  await changeLanguage(lng);
+  try {
+    await changeLanguage(lng);
+  } catch (e) {
+    console.warn('[i18n] failed to switch language', e);
+    return;
+  }
   if (Platform.OS === 'web') return;
   try {
     await SecureStore.setItemAsync(LANGUAGE_STORAGE_KEY, lng);

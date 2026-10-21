@@ -61,8 +61,11 @@
   "jest": {
     "preset": "jest-expo",
     "clearMocks": true,
-    "setupFiles": [
+    "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.ts"
-    ]
+    ],
+    "moduleNameMapper": {
+      "\\.css$": "<rootDir>/jest.style-mock.js"
+    }
   }
 }

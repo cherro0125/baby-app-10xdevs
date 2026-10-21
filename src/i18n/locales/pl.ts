@@ -10,6 +10,17 @@ const pl: TranslationShape = {
       network: 'Brak połączenia z internetem.',
     },
   },
+  tabs: {
+    contractions: 'Skurcze',
+    feeding: 'Karmienie',
+    partner: 'Partner',
+    settings: 'Ustawienia',
+  },
+  settings: {
+    title: 'Ustawienia',
+    language: 'Język',
+    signOut: 'Wyloguj się',
+  },
   format: {
     minSec: '{{m}} min {{s}} s',
     min: '{{m}} min',

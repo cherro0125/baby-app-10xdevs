@@ -8,6 +8,17 @@ export default {
       network: 'No internet connection.',
     },
   },
+  tabs: {
+    contractions: 'Contractions',
+    feeding: 'Feeding',
+    partner: 'Partner',
+    settings: 'Settings',
+  },
+  settings: {
+    title: 'Settings',
+    language: 'Language',
+    signOut: 'Sign out',
+  },
   format: {
     minSec: '{{m}}m {{s}}s',
     min: '{{m}}m',

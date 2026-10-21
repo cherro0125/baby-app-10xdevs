@@ -8,12 +8,10 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { InviterInfoDto } from '@/hooks/use-partner';
 import { usePartner } from '@/hooks/use-partner';
-import { useSession } from '@/auth/session-provider';
 
 export default function PartnerScreen() {
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
   const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
-  const { signOut } = useSession();
 
   const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -137,12 +135,7 @@ export default function PartnerScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.container}>
-          <ThemedView style={styles.titleRow}>
-            <ThemedText type="title">Partner</ThemedText>
-            <Pressable onPress={signOut} hitSlop={8}>
-              <ThemedText type="small" themeColor="textSecondary">Sign out</ThemedText>
-            </Pressable>
-          </ThemedView>
+          <ThemedText type="title">Partner</ThemedText>
           <ThemedView style={styles.card}>
             <ThemedText type="default" style={styles.bold}>{partner.displayName ?? partner.email}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">{partner.email}</ThemedText>
@@ -204,12 +197,7 @@ export default function PartnerScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>
-          <ThemedView style={styles.titleRow}>
-            <ThemedText type="title">Partner</ThemedText>
-            <Pressable onPress={signOut} hitSlop={8}>
-              <ThemedText type="small" themeColor="textSecondary">Sign out</ThemedText>
-            </Pressable>
-          </ThemedView>
+          <ThemedText type="title">Partner</ThemedText>
 
           {invite ? (
             <ThemedView style={styles.inviteCard}>
@@ -366,11 +354,5 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: '700',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
   },
 });

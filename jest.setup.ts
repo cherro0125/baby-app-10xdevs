@@ -1,6 +1,13 @@
 // In-memory SecureStore so persistence code can run under Jest.
+// Cleared after every test; clearMocks only resets call history.
+const mockSecureStore = new Map<string, string>();
+
+afterEach(() => {
+  mockSecureStore.clear();
+});
+
 jest.mock('expo-secure-store', () => {
-  const store = new Map<string, string>();
+  const store = mockSecureStore;
   return {
     getItem: jest.fn((key: string) => store.get(key) ?? null),
     setItem: jest.fn((key: string, value: string) => {

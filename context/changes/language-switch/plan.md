@@ -57,6 +57,8 @@ Infrastructure first (typed resources, language resolution, persistence, formatt
 
 **State sequencing** — `setAppLanguage` must persist only after `i18n.changeLanguage` resolves for a supported language; never persist an unsupported code. Components re-render through `useTranslation`'s `languageChanged` subscription — `AppTabs` must call `useTranslation()` itself so native tab labels update.
 
+**Test location** — expo-router treats every `.tsx`/`.ts` file under `src/app/` as a route (`EXPO_ROUTER_CTX_IGNORE` in `node_modules/expo-router/_ctx-shared.js` only excludes `+api` / `+html` / `+native-intent`), so test files must never live there; screen tests go in `src/__tests__/`. Rendering screens under Jest also needs `moduleNameMapper` `\.css$` → `jest.style-mock.js`, because `src/constants/theme.ts` imports `@/global.css`.
+
 ## Phase 1: i18n infrastructure and Jest
 
 ### Overview
@@ -158,7 +160,7 @@ Add the user-visible switch: a fourth Settings tab with English | Polski and Sig
 
 #### 4. Settings screen test
 
-**File**: `src/app/(app)/__tests__/settings.test.tsx`
+**File**: `src/__tests__/settings.test.tsx` (not under `src/app/` — see Critical Implementation Details → Test location)
 
 **Intent**: Verify behaviour, not styling.
 
@@ -359,17 +361,17 @@ No data migration. Existing users without a saved preference keep today's behavi
 
 #### Automated
 
-- [ ] 2.1 All tests pass
-- [ ] 2.2 Type checking passes
-- [ ] 2.3 Linting passes
+- [x] 2.1 All tests pass
+- [x] 2.2 Type checking passes
+- [x] 2.3 Linting passes
 
 #### Manual
 
-- [ ] 2.4 Fourth tab "Settings" with gear icon is visible on iPhone
-- [ ] 2.5 Switching to Polski immediately changes tab labels and the Settings screen; switching back works
-- [ ] 2.6 Language choice survives killing and relaunching the app
-- [ ] 2.7 Sign out from Settings returns to the sign-in screen, which is shown in the chosen language
-- [ ] 2.8 Partner screen no longer shows Sign out
+- [x] 2.4 Fourth tab "Settings" with gear icon is visible on iPhone
+- [x] 2.5 Switching to Polski immediately changes tab labels and the Settings screen; switching back works
+- [x] 2.6 Language choice survives killing and relaunching the app
+- [x] 2.7 Sign out from Settings returns to the sign-in screen, which is shown in the chosen language
+- [x] 2.8 Partner screen no longer shows Sign out
 
 ### Phase 3: Migrate contractions and shared strings
 
