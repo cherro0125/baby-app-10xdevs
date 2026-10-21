@@ -377,14 +377,14 @@ No data migration. Existing users without a saved preference keep today's behavi
 
 #### Automated
 
-- [x] 3.1 All tests pass (including key parity)
-- [x] 3.2 Type checking passes
-- [x] 3.3 Linting passes
+- [x] 3.1 All tests pass (including key parity) — 81fbc23
+- [x] 3.2 Type checking passes — 81fbc23
+- [x] 3.3 Linting passes — 81fbc23
 
 #### Manual
 
-- [x] 3.4 Contractions tab fully Polish after switching: timer, strength, note placeholder, list, row (times 24h, "X min odstępu"), 5-1-1 banner states, delete confirm, edit-times sheet incl. validation error, incomplete-contraction modal
-- [x] 3.5 Switching back to English restores all texts
+- [x] 3.4 Contractions tab fully Polish after switching: timer, strength, note placeholder, list, row (times 24h, "X min odstępu"), 5-1-1 banner states, delete confirm, edit-times sheet incl. validation error, incomplete-contraction modal — 81fbc23
+- [x] 3.5 Switching back to English restores all texts — 81fbc23
 
 ### Phase 4: Migrate feeding and partner, remove template leftovers
 

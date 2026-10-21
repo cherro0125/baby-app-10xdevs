@@ -27,7 +27,7 @@ const pl: TranslationShape = {
     confirm: 'Potwierdź',
     save: 'Zapisz',
     delete: 'Usuń',
-    confirmDelete: 'Potwierdzić usunięcie?',
+    confirmDelete: 'Na pewno usunąć?',
     stop: 'Stop',
     start: 'Początek',
     end: 'Koniec',
@@ -39,10 +39,10 @@ const pl: TranslationShape = {
   timeEdit: {
     title: 'Edytuj czasy',
     stopFirst: '(najpierw zatrzymaj, aby edytować)',
-    endAfterStart: 'Koniec musi być po początku',
+    endAfterStart: 'Koniec musi być później niż początek',
   },
   contractions: {
-    startButton: 'Rozpocznij skurcz',
+    startButton: 'Rozpocznij pomiar',
     strength: 'Siła',
     empty: 'Nie zarejestrowano jeszcze skurczów',
     apart: '{{min}} min odstępu',

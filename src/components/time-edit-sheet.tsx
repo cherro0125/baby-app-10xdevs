@@ -47,7 +47,7 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
   const endDate = contraction.endedAt ? new Date(contraction.endedAt) : null;
   const [endH, setEndH] = useState(() => endDate?.getHours() ?? 0);
   const [endM, setEndM] = useState(() => endDate?.getMinutes() ?? 0);
-  const [error, setError] = useState<string | null>(null);
+  const [endBeforeStart, setEndBeforeStart] = useState(false);
 
   const isActive = !contraction.endedAt;
 
@@ -69,12 +69,12 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
         newEnd.setDate(newEnd.getDate() + 1);
       }
       if (newEnd <= refStart) {
-        setError(t('timeEdit.endAfterStart'));
+        setEndBeforeStart(true);
         return;
       }
       patch.endedAt = newEnd;
     }
-    setError(null);
+    setEndBeforeStart(false);
     onConfirm(contraction.id, patch);
   }
 
@@ -93,7 +93,9 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
             <ThemedText type="smallBold">
               {formatClockTime(new Date(contraction.startedAt), i18n.language)}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary"> {t('timeEdit.stopFirst')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+              {t('timeEdit.stopFirst')}
+            </ThemedText>
           </View>
         ) : (
           <TimeRow
@@ -108,9 +110,9 @@ function TimeEditSheetInner({ contraction, onClose, onConfirm }: InnerProps) {
           <TimeRow label={t('common.end')} h={endH} m={endM} onChangeH={setEndH} onChangeM={setEndM} />
         )}
 
-        {error && (
+        {endBeforeStart && (
           <ThemedText type="small" themeColor="danger" style={styles.error}>
-            {error}
+            {t('timeEdit.endAfterStart')}
           </ThemedText>
         )}
         <View style={styles.actions}>
@@ -205,6 +207,10 @@ const styles = StyleSheet.create({
   // Wide enough for the Polish labels ("Początek").
   timeLabel: {
     width: 72,
+  },
+  // Lets the longer Polish hint wrap instead of running off narrow screens.
+  hint: {
+    flexShrink: 1,
   },
   stepper: {
     flexDirection: 'row',
