@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
+import { MILK_TYPES } from '@/components/milk-types';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -13,14 +15,8 @@ interface FeedingCompletionSheetProps {
   onCancel: () => void;
 }
 
-const MILK_TYPES: { value: MilkType; label: string }[] = [
-  { value: 'BREAST', label: 'Breast' },
-  { value: 'FORMULA', label: 'Formula' },
-  { value: 'PUMPED', label: 'Pumped' },
-  { value: 'OTHER', label: 'Other' },
-];
-
 export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCompletionSheetProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [milkType, setMilkType] = useState<MilkType>('BREAST');
   const [amountText, setAmountText] = useState('');
@@ -48,7 +44,7 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ThemedView style={styles.sheet}>
           <ThemedText type="smallBold" style={styles.title}>
-            Feeding details
+            {t('feeding.details')}
           </ThemedText>
 
           <View style={styles.segmentedControl}>
@@ -66,7 +62,7 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
                 <ThemedText
                   type="small"
                   themeColor={mt.value === milkType ? 'text' : 'textSecondary'}>
-                  {mt.label}
+                  {t(`feeding.milkType.${mt.key}`)}
                 </ThemedText>
               </Pressable>
             ))}
@@ -74,7 +70,7 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
 
           <TextInput
             style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            placeholder="Amount (ml)"
+            placeholder={t('feeding.amountPlaceholder')}
             placeholderTextColor={theme.textSecondary}
             value={amountText}
             onChangeText={setAmountText}
@@ -83,7 +79,7 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
 
           <TextInput
             style={[styles.input, styles.noteInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            placeholder="Add a note…"
+            placeholder={t('common.addNote')}
             placeholderTextColor={theme.textSecondary}
             value={note}
             onChangeText={setNote}
@@ -94,13 +90,13 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.backgroundElement }]}
               onPress={handleCancel}>
-              <ThemedText type="small">Cancel</ThemedText>
+              <ThemedText type="small">{t('common.cancel')}</ThemedText>
             </Pressable>
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.text }]}
               onPress={handleSave}>
               <ThemedText type="smallBold" style={{ color: theme.background }}>
-                Save
+                {t('common.save')}
               </ThemedText>
             </Pressable>
           </View>

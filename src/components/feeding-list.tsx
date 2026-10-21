@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { FeedingRow } from '@/components/feeding-row';
 import { ThemedText } from '@/components/themed-text';
@@ -14,13 +15,14 @@ interface FeedingListProps {
 }
 
 export function FeedingList({ feedings, onDelete, onEdit, currentUserId, partnerLabel }: FeedingListProps) {
+  const { t } = useTranslation();
   const completed = feedings.filter((f) => f.endedAt !== null);
 
   if (completed.length === 0) {
     return (
       <View style={{ paddingTop: Spacing.four, alignItems: 'center' }}>
         <ThemedText type="small" themeColor="textSecondary">
-          No feedings logged yet
+          {t('feeding.empty')}
         </ThemedText>
       </View>
     );

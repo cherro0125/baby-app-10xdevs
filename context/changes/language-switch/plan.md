@@ -390,13 +390,13 @@ No data migration. Existing users without a saved preference keep today's behavi
 
 #### Automated
 
-- [ ] 4.1 All tests pass, including the hardcoded-string guard
-- [ ] 4.2 Type checking passes
-- [ ] 4.3 Linting passes
+- [x] 4.1 All tests pass, including the hardcoded-string guard
+- [x] 4.2 Type checking passes
+- [x] 4.3 Linting passes
 
 #### Manual
 
-- [ ] 4.4 Feeding tab fully Polish: timer, list, row (badge abbreviations, times, durations, ml), completion sheet, edit-times sheet, incomplete-feeding modal, delete confirm
-- [ ] 4.5 Partner tab fully Polish in all three states (unlinked with invite code, confirm-invite via deep link, linked with unlink confirmation) and error messages (e.g. wrong code)
-- [ ] 4.6 /explore no longer reachable; no English text left when Polish is selected
-- [ ] 4.7 English mode unchanged versus before the change
+- [x] 4.4 Feeding tab fully Polish: timer, list, row (badge abbreviations, times, durations, ml), completion sheet, edit-times sheet, incomplete-feeding modal, delete confirm
+- [x] 4.5 Partner tab fully Polish in all three states (unlinked with invite code, confirm-invite via deep link, linked with unlink confirmation) and error messages (e.g. wrong code)
+- [x] 4.6 /explore no longer reachable; no English text left when Polish is selected
+- [x] 4.7 English mode unchanged versus before the change
