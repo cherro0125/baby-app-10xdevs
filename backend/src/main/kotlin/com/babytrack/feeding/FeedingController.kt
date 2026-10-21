@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -31,6 +32,14 @@ data class UpdateFeedingRequest(
     val startedAt: Instant? = null,
     val endedAt: Instant? = null,
     val milkType: MilkType? = null,
+    @field:Positive val amountMl: Int? = null,
+    @field:Size(max = 2000) val note: String? = null,
+)
+
+data class UpsertFeedingRequest(
+    @field:NotNull val startedAt: Instant,
+    @field:NotNull val endedAt: Instant,
+    @field:NotNull val milkType: MilkType,
     @field:Positive val amountMl: Int? = null,
     @field:Size(max = 2000) val note: String? = null,
 )
@@ -97,6 +106,25 @@ class FeedingController(private val feedingService: FeedingService) {
             note = request.note,
         )
         return ResponseEntity.ok(feeding.toDto())
+    }
+
+    @PutMapping("/{id}")
+    fun upsert(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: UpsertFeedingRequest,
+    ): ResponseEntity<FeedingDto> {
+        val user = principal()
+        val result = feedingService.upsert(
+            id = id,
+            requesterId = user.id,
+            startedAt = request.startedAt,
+            endedAt = request.endedAt,
+            milkType = request.milkType,
+            amountMl = request.amountMl,
+            note = request.note,
+        )
+        val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(result.feeding.toDto())
     }
 
     @GetMapping
