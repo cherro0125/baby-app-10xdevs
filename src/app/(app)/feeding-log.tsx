@@ -77,8 +77,15 @@ export default function FeedingLogScreen() {
   }
 
   async function handleEditConfirm(id: string, patch: { startedAt?: Date; endedAt?: Date }) {
+    if (!editTarget?.endedAt) return;
     try {
-      await edit(id, patch);
+      await edit(id, {
+        startedAt: patch.startedAt ?? new Date(editTarget.startedAt),
+        endedAt: patch.endedAt ?? new Date(editTarget.endedAt),
+        milkType: editTarget.milkType ?? 'BREAST',
+        amountMl: editTarget.amountMl,
+        note: editTarget.note,
+      });
       setEditTarget(null);
     } catch (e) {
       console.error('[FeedingLogScreen] edit failed', e);

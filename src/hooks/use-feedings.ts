@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { createApiClient } from '@/api/client';
 import { useSession } from '@/auth/session-provider';
+import type { FeedingEdit } from '@/components/feeding-edit';
 import type { AppDatabase } from '@/db/schema';
 import { openDatabase, runMigrations } from '@/db/schema';
 import type { LocalFeeding, MilkType } from '@/db/types';
@@ -71,14 +72,14 @@ async function syncWithBackend(
             [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
           );
         } else {
-          // Own row: insert-if-new to preserve unsynced local state
-          const exists = await db.getFirstAsync<{ id: string }>(
-            'SELECT id FROM feedings WHERE id = ?',
+          // Own row: server wins unless a local edit is still waiting for upload
+          const pending = await db.getFirstAsync<{ id: string }>(
+            'SELECT id FROM feedings WHERE id = ? AND synced = 0',
             [row.id],
           );
-          if (!exists) {
+          if (!pending) {
             await db.runAsync(
-              'INSERT INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
+              'INSERT OR REPLACE INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
               [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
             );
           }
@@ -97,15 +98,15 @@ async function syncWithBackend(
       }
     }
 
-    // Upload: push finalized unsynced own feedings (single POST — no two-step)
+    // Upload: PUT finalized unsynced own feedings under their local id (idempotent upsert)
     const unsynced = await db.getAllAsync<LocalFeeding>(
       `SELECT ${FEEDING_COLS} FROM feedings WHERE synced = 0 AND ended_at IS NOT NULL AND user_id = ?`,
       [userId],
     );
     for (const row of unsynced) {
       try {
-        const postRes = await api.request('/api/feedings', {
-          method: 'POST',
+        const putRes = await api.request(`/api/feedings/${row.id}`, {
+          method: 'PUT',
           body: JSON.stringify({
             startedAt: row.startedAt,
             endedAt: row.endedAt,
@@ -114,8 +115,12 @@ async function syncWithBackend(
             note: row.note,
           }),
         });
-        if (postRes.ok) {
-          await db.runAsync('UPDATE feedings SET synced = 1 WHERE id = ?', [row.id]);
+        if (putRes.ok) {
+          // Only if not edited while the request was in flight — otherwise the edit would never upload
+          await db.runAsync('UPDATE feedings SET synced = 1 WHERE id = ? AND updated_at = ?', [
+            row.id,
+            row.updatedAt,
+          ]);
         }
       } catch {
         // best-effort: leave synced=0 for next attempt
@@ -141,7 +146,7 @@ export interface UseFeedingsResult {
     note?: string | null,
   ) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  edit: (id: string, patch: { startedAt?: Date; endedAt?: Date }) => Promise<void>;
+  edit: (id: string, changes: FeedingEdit) => Promise<void>;
 }
 
 export function useFeedings(hasPartner: boolean): UseFeedingsResult {
@@ -284,59 +289,50 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
     }
   }
 
-  async function edit(id: string, patch: { startedAt?: Date; endedAt?: Date }): Promise<void> {
+  async function edit(id: string, changes: FeedingEdit): Promise<void> {
     const db = dbRef.current;
     if (!db || !user) return;
     try {
-      const myUserId = user.id.toString();
-      const isOwn = await db.getFirstAsync<{ id: string }>(
-        'SELECT id FROM feedings WHERE id = ? AND user_id = ?',
-        [id, myUserId],
+      if (changes.endedAt <= changes.startedAt) {
+        throw new Error('endedAt must be after startedAt');
+      }
+      const existing = await db.getFirstAsync<LocalFeeding>(
+        `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ?`,
+        [id],
       );
-      if (!isOwn) {
-        // Partner entry: direct API PATCH
-        const existing = await db.getFirstAsync<LocalFeeding>(
-          `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ?`,
-          [id],
-        );
-        if (!existing) return;
-        const endedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
-        if (!endedAt) throw new Error('Cannot edit active partner feeding');
-        const body: { startedAt?: string; endedAt: string } = { endedAt };
-        if (patch.startedAt) body.startedAt = patch.startedAt.toISOString();
+      if (!existing) return;
+      const startedAt = changes.startedAt.toISOString();
+      const endedAt = changes.endedAt.toISOString();
+      const now = nowIso();
+      if (existing.userId !== user.id.toString()) {
+        // Partner entry: direct API PUT (full replacement)
         const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
         const res = await api.request(`/api/feedings/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
+          method: 'PUT',
+          body: JSON.stringify({
+            startedAt,
+            endedAt,
+            milkType: changes.milkType,
+            amountMl: changes.amountMl,
+            note: changes.note,
+          }),
         });
         if (!res.ok) throw new Error(`Failed to update partner feeding: ${res.status}`);
         const updated = (await res.json()) as ServerFeeding;
-        const now = nowIso();
         await db.runAsync(
-          'UPDATE feedings SET started_at = ?, ended_at = ?, duration_minutes = ?, updated_at = ? WHERE id = ?',
-          [updated.startedAt, updated.endedAt, updated.durationMinutes, now, id],
+          'UPDATE feedings SET started_at = ?, ended_at = ?, milk_type = ?, duration_minutes = ?, amount_ml = ?, note = ?, updated_at = ? WHERE id = ?',
+          [updated.startedAt, updated.endedAt, updated.milkType, updated.durationMinutes, updated.amountMl, updated.note, now, id],
         );
         await reload();
         return;
       }
-      // Own entry: local-first flow
-      const existing = await db.getFirstAsync<LocalFeeding>(
-        `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ? AND user_id = ?`,
-        [id, myUserId],
+      // Own entry: local-first flow, uploaded by the next sync
+      const durationMinutes = Math.round(
+        (changes.endedAt.getTime() - changes.startedAt.getTime()) / 60_000,
       );
-      if (!existing) return;
-      const newStartedAt = patch.startedAt?.toISOString() ?? existing.startedAt;
-      const newEndedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
-      if (newEndedAt && newEndedAt <= newStartedAt) {
-        throw new Error('endedAt must be after startedAt');
-      }
-      const newDuration = newEndedAt
-        ? Math.round((new Date(newEndedAt).getTime() - new Date(newStartedAt).getTime()) / 60_000)
-        : null;
-      const now = nowIso();
       await db.runAsync(
-        'UPDATE feedings SET started_at = ?, ended_at = ?, duration_minutes = ?, updated_at = ?, synced = 0 WHERE id = ?',
-        [newStartedAt, newEndedAt, newDuration, now, id],
+        'UPDATE feedings SET started_at = ?, ended_at = ?, milk_type = ?, duration_minutes = ?, amount_ml = ?, note = ?, updated_at = ?, synced = 0 WHERE id = ?',
+        [startedAt, endedAt, changes.milkType, durationMinutes, changes.amountMl, changes.note, now, id],
       );
       await reload();
     } catch (e) {

@@ -334,14 +334,14 @@ Download now writes every own row on each sync (`INSERT OR REPLACE`) instead of 
 
 #### Automated
 
-- [ ] 2.1 Jest passes: `npm test`
-- [ ] 2.2 Type checking passes: `npx tsc --noEmit`
-- [ ] 2.3 Lint passes with no new warnings: `npm run lint`
+- [x] 2.1 Jest passes: `npm test`
+- [x] 2.2 Type checking passes: `npx tsc --noEmit`
+- [x] 2.3 Lint passes with no new warnings: `npm run lint`
 
 #### Manual
 
-- [ ] 2.4 After reload each feeding appears once and the server count does not grow
-- [ ] 2.5 A new feeding appears on the server with the same id as locally
+- [x] 2.4 After reload each feeding appears once and the server count does not grow
+- [x] 2.5 A new feeding appears on the server with the same id as locally
 
 ### Phase 3: UI — single feeding edit sheet
 
