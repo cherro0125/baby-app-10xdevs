@@ -37,6 +37,7 @@ export function FeedingEditSheet({ feeding, onClose, onSave }: FeedingEditSheetP
 
 const ERROR_KEYS = {
   endBeforeStart: 'timeEdit.endAfterStart',
+  tooLong: 'feeding.edit.tooLong',
   invalidAmount: 'feeding.edit.invalidAmount',
   saveFailed: 'feeding.edit.saveFailed',
 } as const;
@@ -65,8 +66,8 @@ function FeedingEditSheetInner({ feeding, onClose, onSave }: InnerProps) {
 
   async function handleSave() {
     const times = buildEditTimes(feeding, { h: startH, m: startM }, { h: endH, m: endM });
-    if (times === 'endBeforeStart') {
-      setError('endBeforeStart');
+    if (typeof times === 'string') {
+      setError(times);
       return;
     }
     const amountMl = parseAmountMl(amountText);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -18,7 +18,9 @@ export default function PartnerScreen() {
   const { partner, isLoading, refresh, generateInvite, getInviteInfo, acceptInvite, unlink } =
     usePartner();
 
-  const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
+  const [invite, setInvite] = useState<{ token: string; deepLink: string; expiresAt: string } | null>(
+    null,
+  );
   const [inviteFailed, setInviteFailed] = useState(false);
   const [unlinkPending, setUnlinkPending] = useState(false);
 
@@ -33,15 +35,27 @@ export default function PartnerScreen() {
   const [inviterInfo, setInviterInfo] = useState<InviterInfoDto | null>(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
 
-  // While my invite code is shown, poll so the screen switches to linked once the partner accepts.
+  // While my invite code is shown on this screen, poll so it switches to linked once the partner
+  // accepts. Each poll starts after the previous one finished (slow responses still land), and
+  // polling stops when the code expires.
+  const isFocused = useIsFocused();
   useEffect(() => {
-    if (!invite || partner) return;
-    const id = setInterval(() => {
-      refresh().catch(console.error);
-    }, 3_000);
-    return () => clearInterval(id);
+    if (!invite || partner || !isFocused) return;
+    const expiresAt = Date.parse(invite.expiresAt);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      if (Date.now() >= expiresAt) return;
+      await refresh().catch(console.error);
+      if (!cancelled) timer = setTimeout(poll, 3_000);
+    }
+    timer = setTimeout(poll, 3_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invite, partner]);
+  }, [invite, partner, isFocused]);
 
   // Auto-handle deep link token on mount / when it changes
   useEffect(() => {
@@ -112,7 +126,7 @@ export default function PartnerScreen() {
     setInviteFailed(false);
     try {
       const result = await generateInvite();
-      setInvite({ token: result.token, deepLink: result.deepLink });
+      setInvite({ token: result.token, deepLink: result.deepLink, expiresAt: result.expiresAt });
     } catch (e) {
       console.error('[PartnerScreen] generateInvite failed', e);
       setInviteFailed(true);

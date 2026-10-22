@@ -76,6 +76,7 @@ export default {
       title: 'Edit feeding',
       saveFailed: "Couldn't save changes. Try again.",
       invalidAmount: 'Enter the amount as a whole number of ml',
+      tooLong: "A feeding can't last 24 hours or more",
     },
     incomplete: {
       title: 'Feeding in progress',

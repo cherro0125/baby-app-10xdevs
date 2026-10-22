@@ -15,6 +15,7 @@ import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import java.net.URI
 
 @RestControllerAdvice
@@ -92,14 +93,19 @@ class GlobalExceptionHandler {
             detail = ex.message
         }
 
-    // Without these, malformed bodies (missing/unparseable fields) and @Valid failures
-    // would fall through to handleGeneric and surface as 500.
-    @ExceptionHandler(HttpMessageNotReadableException::class, MethodArgumentNotValidException::class)
+    // Without these, malformed bodies (missing/unparseable fields), @Valid failures and
+    // unparseable path/query values (non-UUID id, ?create=foo) would fall through to
+    // handleGeneric and surface as 500.
+    @ExceptionHandler(
+        HttpMessageNotReadableException::class,
+        MethodArgumentNotValidException::class,
+        MethodArgumentTypeMismatchException::class,
+    )
     fun handleInvalidRequest(ex: Exception): ProblemDetail =
         ProblemDetail.forStatus(HttpStatus.BAD_REQUEST).apply {
             type = URI.create("urn:babytrack:error:invalid-request")
             title = "Invalid Request"
-            detail = "The request body is missing required fields or contains invalid values"
+            detail = "The request is missing required fields or contains invalid values"
         }
 
     @ExceptionHandler(IllegalStateException::class)

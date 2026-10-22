@@ -38,6 +38,9 @@ async function loadFeedings(db: AppDatabase): Promise<LocalFeeding[]> {
   );
 }
 
+// Matches the backend's findTop200…OrderByStartedAtDesc for GET /api/feedings/shared.
+const SHARED_PAGE_SIZE = 200;
+
 interface ServerFeeding {
   id: string;
   userId: string;
@@ -59,10 +62,14 @@ async function syncWithBackend(
   try {
     const api = createApiClient(() => token, onUnauth);
 
-    // Deletions: send queued own-feeding deletions first, so the download no longer returns them
+    // Deletions: send queued own-feeding deletions first, so the download no longer returns them.
+    // Only this user's: another account's token would get a 404 and drop the tombstone.
+    // Tombstones written before userId was recorded are sent by whoever syncs first.
     const tombstones = await db.getAllAsync<{ id: string; feedingId: string }>(
       `SELECT id, json_extract(payload, '$.feedingId') AS feedingId FROM sync_queue
-       WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') IS NOT NULL`,
+       WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') IS NOT NULL
+         AND COALESCE(json_extract(payload, '$.userId'), ?) = ?`,
+      [userId, userId],
     );
     for (const tombstone of tombstones) {
       try {
@@ -120,6 +127,20 @@ async function syncWithBackend(
       } else {
         await db.runAsync('DELETE FROM feedings WHERE user_id != ?', [userId]);
       }
+      // Purge own rows deleted on the server (e.g. by the partner): a synced row missing from the
+      // response is gone there. Unsynced rows are kept for upload. A full page only covers its
+      // startedAt window, so older rows are left alone. julianday() because server and local
+      // timestamps differ in fractional-second digits.
+      const ownIds = serverRows.filter((r) => r.userId === userId).map((r) => r.id);
+      // The server sorts by startedAt DESC, so the last row is the oldest.
+      const windowStart =
+        serverRows.length >= SHARED_PAGE_SIZE ? serverRows[serverRows.length - 1].startedAt : null;
+      const notInOwn = ownIds.length > 0 ? `AND id NOT IN (${ownIds.map(() => '?').join(',')})` : '';
+      await db.runAsync(
+        `DELETE FROM feedings WHERE user_id = ? AND synced = 1 ${notInOwn}
+         AND (? IS NULL OR julianday(started_at) >= julianday(?))`,
+        [userId, ...ownIds, windowStart, windowStart],
+      );
     }
 
     // Upload: PUT finalized unsynced own feedings under their local id (idempotent upsert)
@@ -181,11 +202,25 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
   const [feedings, setFeedings] = useState<LocalFeeding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [initialActiveId, setInitialActiveId] = useState<string | null | undefined>(undefined);
+  // The running sync, so the 5 s poll joins it instead of overlapping: an older download landing
+  // after a newer upload would briefly revert or drop rows.
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     sessionRef.current = session;
     signOutRef.current = signOut;
   });
+
+  function sync(db: AppDatabase, userId: string, token: string): Promise<void> {
+    if (!syncInFlightRef.current) {
+      syncInFlightRef.current = syncWithBackend(db, userId, token, () => signOutRef.current()).finally(
+        () => {
+          syncInFlightRef.current = null;
+        },
+      );
+    }
+    return syncInFlightRef.current;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -203,7 +238,7 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
 
         const token = sessionRef.current;
         if (token) {
-          await syncWithBackend(db, userId, token, () => signOutRef.current());
+          await sync(db, userId, token);
           if (!cancelled) {
             const syncedRows = await loadFeedings(db);
             setFeedings(syncedRows);
@@ -225,7 +260,7 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
       const db = dbRef.current;
       const token = sessionRef.current;
       if (!db || !token || !user) return;
-      syncWithBackend(db, user.id.toString(), token, () => signOutRef.current())
+      sync(db, user.id.toString(), token)
         .then(() => loadFeedings(db))
         .then(setFeedings)
         .catch(console.error);
@@ -274,7 +309,8 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
       );
       if (!existing) return;
       const endedAtIso = endedAt.toISOString();
-      const durationMinutes = Math.round(
+      // Floor, like the server's ChronoUnit.MINUTES.between, so the value doesn't change after sync
+      const durationMinutes = Math.floor(
         (endedAt.getTime() - new Date(existing.startedAt).getTime()) / 60_000,
       );
       const now = nowIso();
@@ -304,7 +340,7 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
         await db.withTransactionAsync(async () => {
           await db.runAsync(
             'INSERT INTO sync_queue (id, operation, payload, created_at, attempts) VALUES (?, ?, ?, ?, 0)',
-            [uuid(), 'DELETE', JSON.stringify({ feedingId: id }), nowIso()],
+            [uuid(), 'DELETE', JSON.stringify({ feedingId: id, userId: myUserId }), nowIso()],
           );
           await db.runAsync('DELETE FROM feedings WHERE id = ? AND user_id = ?', [id, myUserId]);
         });
@@ -323,7 +359,8 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
 
   async function edit(id: string, changes: FeedingEdit): Promise<void> {
     const db = dbRef.current;
-    if (!db || !user) return;
+    // Throw rather than return: the edit sheet treats a resolved promise as saved and closes.
+    if (!db || !user) throw new Error('edit before the feedings database is ready');
     try {
       if (changes.endedAt <= changes.startedAt) {
         throw new Error('endedAt must be after startedAt');
@@ -332,7 +369,8 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
         `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ?`,
         [id],
       );
-      if (!existing) return;
+      // E.g. a partner feeding dropped after a 404 while the sheet stayed open
+      if (!existing) throw new Error(`Feeding ${id} no longer exists`);
       const startedAt = changes.startedAt.toISOString();
       const endedAt = changes.endedAt.toISOString();
       const now = nowIso();
@@ -365,7 +403,8 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
         return;
       }
       // Own entry: local-first flow, uploaded by the next sync
-      const durationMinutes = Math.round(
+      // Floor, like the server's ChronoUnit.MINUTES.between, so the value doesn't change after sync
+      const durationMinutes = Math.floor(
         (changes.endedAt.getTime() - changes.startedAt.getTime()) / 60_000,
       );
       await db.runAsync(

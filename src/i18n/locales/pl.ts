@@ -78,6 +78,7 @@ const pl: TranslationShape = {
       title: 'Edytuj karmienie',
       saveFailed: 'Nie udało się zapisać zmian. Spróbuj ponownie.',
       invalidAmount: 'Podaj ilość jako liczbę całkowitą ml',
+      tooLong: 'Karmienie nie może trwać 24 godzin lub dłużej',
     },
     incomplete: {
       title: 'Karmienie w toku',

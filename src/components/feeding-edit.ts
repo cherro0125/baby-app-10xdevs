@@ -9,13 +9,16 @@ export interface FeedingEdit {
   note: string | null; // null = no note
 }
 
-/** Parses the amount input: empty → null, positive whole number → number, anything else → 'invalid'. */
+// Far above any real feeding; also keeps the value inside the backend's Int amountMl.
+const MAX_AMOUNT_ML = 10_000;
+
+/** Parses the amount input: empty → null, whole number 1–10,000 → number, anything else → 'invalid'. */
 export function parseAmountMl(text: string): number | null | 'invalid' {
   const trimmed = text.trim();
   if (!trimmed) return null;
   if (!/^\d+$/.test(trimmed)) return 'invalid';
   const amount = parseInt(trimmed, 10);
-  return amount > 0 ? amount : 'invalid';
+  return amount > 0 && amount <= MAX_AMOUNT_ML ? amount : 'invalid';
 }
 
 interface ClockTime {
@@ -23,24 +26,32 @@ interface ClockTime {
   m: number;
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+/** The given clock time on whichever day keeps it closest (within 12 h) to the original timestamp. */
+function nearestTo(original: Date, time: ClockTime): Date {
+  const result = new Date(original);
+  result.setHours(time.h, time.m, 0, 0);
+  const diff = result.getTime() - original.getTime();
+  if (diff > 12 * HOUR_MS) result.setDate(result.getDate() - 1);
+  else if (diff < -12 * HOUR_MS) result.setDate(result.getDate() + 1);
+  return result;
+}
+
 /**
- * Applies edited hours/minutes to the feeding's original days.
- * Returns 'endBeforeStart' when the end is not after the start.
+ * Applies edited hours/minutes to the feeding, each time staying on the day nearest its original
+ * value, so corrections around midnight move by minutes, not by a day.
+ * Returns 'endBeforeStart' when the end is not after the start, 'tooLong' for 24 h or more.
  */
 export function buildEditTimes(
   feeding: { startedAt: string; endedAt: string },
   start: ClockTime,
   end: ClockTime,
-): { startedAt: Date; endedAt: Date } | 'endBeforeStart' {
-  const startedAt = new Date(feeding.startedAt);
-  startedAt.setHours(start.h, start.m, 0, 0);
-  const endedAt = new Date(feeding.endedAt);
-  endedAt.setHours(end.h, end.m, 0, 0);
-  // Midnight crossing: if editing hours pushed end to before start, advance by one day.
-  // Assumes feedings are < 24h.
-  if (endedAt < startedAt) {
-    endedAt.setDate(endedAt.getDate() + 1);
-  }
+): { startedAt: Date; endedAt: Date } | 'endBeforeStart' | 'tooLong' {
+  const startedAt = nearestTo(new Date(feeding.startedAt), start);
+  const endedAt = nearestTo(new Date(feeding.endedAt), end);
   if (endedAt <= startedAt) return 'endBeforeStart';
+  if (endedAt.getTime() - startedAt.getTime() >= DAY_MS) return 'tooLong';
   return { startedAt, endedAt };
 }

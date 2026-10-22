@@ -68,6 +68,8 @@ export function FeedingDetailsFields({
         placeholderTextColor={theme.textSecondary}
         value={note}
         onChangeText={onNoteChange}
+        // Server limit (UpsertFeedingRequest @Size(max = 2000)); longer notes would never sync.
+        maxLength={2000}
         multiline
       />
     </>
