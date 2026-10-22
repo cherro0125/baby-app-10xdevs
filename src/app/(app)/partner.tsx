@@ -15,7 +15,8 @@ type CodeError = 'expired' | 'notFound' | 'codeLength' | 'alreadyLinked' | 'gene
 export default function PartnerScreen() {
   const { t } = useTranslation();
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
-  const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
+  const { partner, isLoading, refresh, generateInvite, getInviteInfo, acceptInvite, unlink } =
+    usePartner();
 
   const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
   const [inviteFailed, setInviteFailed] = useState(false);
@@ -31,6 +32,16 @@ export default function PartnerScreen() {
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [inviterInfo, setInviterInfo] = useState<InviterInfoDto | null>(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
+
+  // While my invite code is shown, poll so the screen switches to linked once the partner accepts.
+  useEffect(() => {
+    if (!invite || partner) return;
+    const id = setInterval(() => {
+      refresh().catch(console.error);
+    }, 3_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invite, partner]);
 
   // Auto-handle deep link token on mount / when it changes
   useEffect(() => {
@@ -292,6 +303,8 @@ const styles = StyleSheet.create({
   code: {
     fontFamily: 'monospace',
     fontSize: 36,
+    // ThemedText's default lineHeight (24) clips 36px glyphs on iOS.
+    lineHeight: 44,
     fontWeight: '700',
     letterSpacing: 4,
   },

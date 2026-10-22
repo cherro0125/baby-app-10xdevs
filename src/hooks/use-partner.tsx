@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { createApiClient } from '@/api/client';
 import { useSession } from '@/auth/session-provider';
@@ -23,16 +24,30 @@ export interface InviterInfoDto {
 export interface UsePartnerResult {
   partner: PartnerDto | null;
   isLoading: boolean;
+  /** Re-reads the link status from the server, e.g. while an invite waits to be accepted. */
+  refresh: () => Promise<void>;
   generateInvite: () => Promise<PartnerInviteDto>;
   getInviteInfo: (token: string) => Promise<InviterInfoDto>;
   acceptInvite: (token: string) => Promise<void>;
   unlink: () => Promise<void>;
 }
 
+const PartnerContext = createContext<UsePartnerResult | null>(null);
+
 export function usePartner(): UsePartnerResult {
+  const ctx = useContext(PartnerContext);
+  if (!ctx) throw new Error('usePartner must be used within PartnerProvider');
+  return ctx;
+}
+
+// One partner state for all tabs: the tabs stay mounted, so per-screen copies went stale
+// when the link changed on another screen or on the partner's device.
+export function PartnerProvider({ children }: { children: React.ReactNode }) {
   const { session, signOut } = useSession();
   const sessionRef = useRef<string | null>(null);
   const signOutRef = useRef(signOut);
+  // Ignores responses from fetches superseded by a newer fetch or a session change.
+  const fetchSeqRef = useRef(0);
   const [partner, setPartner] = useState<PartnerDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,40 +56,45 @@ export function usePartner(): UsePartnerResult {
     signOutRef.current = signOut;
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchStatus() {
-      const token = sessionRef.current;
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
-        const res = await api.request('/api/partner');
-        if (!cancelled) {
-          if (res.ok) {
-            const data = (await res.json()) as PartnerDto;
-            setPartner(data);
-          } else if (res.status === 404) {
-            setPartner(null);
-          }
-        }
-      } catch (e) {
-        console.error('[usePartner] fetchStatus failed', e);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    fetchStatus().catch(console.error);
-    return () => { cancelled = true; };
-  }, [session]);
-
   function api() {
     return createApiClient(() => sessionRef.current, () => signOutRef.current());
   }
+
+  async function fetchStatus() {
+    const seq = ++fetchSeqRef.current;
+    // Signed out: the value below reports no partner, nothing to fetch.
+    if (!sessionRef.current) return;
+    try {
+      const res = await api().request('/api/partner');
+      if (seq !== fetchSeqRef.current) return;
+      if (res.ok) {
+        setPartner((await res.json()) as PartnerDto);
+      } else if (res.status === 404) {
+        setPartner(null);
+      }
+    } catch (e) {
+      console.error('[usePartner] fetchStatus failed', e);
+    } finally {
+      if (seq === fetchSeqRef.current) setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    function load() {
+      fetchStatus().catch(console.error);
+    }
+    // Deferred like the AppState callback, so no state update runs synchronously inside the effect.
+    const initial = setTimeout(load, 0);
+    // The partner may have linked or unlinked while the app was in the background.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') load();
+    });
+    return () => {
+      clearTimeout(initial);
+      sub.remove();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   async function generateInvite(): Promise<PartnerInviteDto> {
     const res = await api().request('/api/partner/invite', { method: 'POST' });
@@ -103,6 +123,7 @@ export function usePartner(): UsePartnerResult {
       throw err;
     }
     const data = (await res.json()) as { partnerId: string; partnerName: string | null; partnerEmail: string };
+    fetchSeqRef.current++;
     setPartner({ id: data.partnerId, email: data.partnerEmail, displayName: data.partnerName });
   }
 
@@ -111,8 +132,19 @@ export function usePartner(): UsePartnerResult {
     if (!res.ok) {
       throw new Error(`unlink failed: ${res.status}`);
     }
+    fetchSeqRef.current++;
     setPartner(null);
   }
 
-  return { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink };
+  const value: UsePartnerResult = {
+    partner: session ? partner : null,
+    isLoading: session ? isLoading : false,
+    refresh: fetchStatus,
+    generateInvite,
+    getInviteInfo,
+    acceptInvite,
+    unlink,
+  };
+
+  return <PartnerContext.Provider value={value}>{children}</PartnerContext.Provider>;
 }
