@@ -74,6 +74,11 @@ const pl: TranslationShape = {
       pumped: 'ODC',
       other: 'INN',
     },
+    edit: {
+      title: 'Edytuj karmienie',
+      saveFailed: 'Nie udało się zapisać zmian. Spróbuj ponownie.',
+      invalidAmount: 'Podaj ilość jako liczbę całkowitą ml',
+    },
     incomplete: {
       title: 'Karmienie w toku',
       body: 'Wygląda na to, że pomiar karmienia nie został zatrzymany. Co chcesz zrobić?',
