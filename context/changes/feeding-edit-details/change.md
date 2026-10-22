@@ -1,7 +1,7 @@
 ---
 change_id: feeding-edit-details
 title: Edit milk type, amount and note of existing feedings
-status: impl_reviewed
+status: implemented
 created: 2026-10-21
 updated: 2026-10-22
 archived_at: null
@@ -20,3 +20,4 @@ User report (manual testing of `language-switch`, 2026-10-21): "Jak edytuję akt
 - Phase 2 extras (review F5): (1) `src/app/(app)/feeding-log.tsx` has a temporary bridge that builds a full `FeedingEdit` from the times-only sheet plus the feeding's current details, to keep tsc green until Phase 3 replaces the sheet; (2) `runMigrations` (`src/db/schema.ts`) is memoised per app process so the one-time `user_version` 1 cleanup can't interleave between the feeding and contraction hooks.
 - Phase 2 review (F2): own-feeding deletions now sync to the server via tombstones in `sync_queue` (`operation = 'DELETE'`, payload `{ feedingId }`); the next sync sends `DELETE /api/feedings/{id}` (404 counts as done) and the download skips tombstoned ids. This moves "syncing deletions of own feedings" out of the plan's "What We're NOT Doing" for feedings only — contractions keep the gap (their `DELETE` queue rows use payload `{ id, userId }` and are still never processed).
 - Phase 2 review (F3): `PUT /api/feedings/{id}` accepts `?create=false` (404 instead of creating); partner edits use it so a feeding the partner deleted meanwhile is not recreated as the editor's own. Own-feeding upload keeps the default `create=true`.
+- Phase 3 manual testing (2026-10-22) also needed two commits outside the plan: `b9c1ff3` changes the Android package to `com.dominik.babytrack` (the `com.babytrack.app` + debug SHA-1 pair was already registered in Google Cloud), and `dfb9db8` adds a shared `PartnerProvider` with refresh on foreground and while an invite is shown (the tabs kept stale partner state, so the feeding tab never started partner sync after linking) and fixes the clipped invite code on iOS.

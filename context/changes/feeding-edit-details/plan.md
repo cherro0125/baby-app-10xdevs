@@ -347,18 +347,18 @@ Download now writes every own row on each sync (`INSERT OR REPLACE`) instead of 
 
 #### Automated
 
-- [x] 3.1 Jest passes, including key parity and the hardcoded-string guard: `npm test`
-- [x] 3.2 Type checking passes: `npx tsc --noEmit`
-- [x] 3.3 Lint passes with no new warnings: `npm run lint`
-- [x] 3.4 Old sheet is gone: `test ! -f src/components/feeding-time-edit-sheet.tsx`
+- [x] 3.1 Jest passes, including key parity and the hardcoded-string guard: `npm test` — fc83cff
+- [x] 3.2 Type checking passes: `npx tsc --noEmit` — fc83cff
+- [x] 3.3 Lint passes with no new warnings: `npm run lint` — fc83cff
+- [x] 3.4 Old sheet is gone: `test ! -f src/components/feeding-time-edit-sheet.tsx` — fc83cff
 
 #### Manual
 
-- [x] 3.5 Edit sheet opens prefilled with times, milk type, amount and note
-- [x] 3.6 Changing milk type, amount and note updates the row immediately
-- [x] 3.7 Clearing amount and note persists after reload
-- [x] 3.8 End-before-start and invalid amount show translated errors and save nothing
-- [x] 3.9 Partner sync: edits appear on the other device within ~5 s as one row, both directions
-- [x] 3.10 Editing a partner's feeding offline shows the save-failed error and keeps the sheet open
-- [x] 3.11 Completion sheet after Stop still works as before
-- [x] 3.12 New texts correct in English and Polish
+- [x] 3.5 Edit sheet opens prefilled with times, milk type, amount and note — fc83cff
+- [x] 3.6 Changing milk type, amount and note updates the row immediately — fc83cff
+- [x] 3.7 Clearing amount and note persists after reload — fc83cff
+- [x] 3.8 End-before-start and invalid amount show translated errors and save nothing — fc83cff
+- [x] 3.9 Partner sync: edits appear on the other device within ~5 s as one row, both directions — fc83cff
+- [x] 3.10 Editing a partner's feeding offline shows the save-failed error and keeps the sheet open — fc83cff
+- [x] 3.11 Completion sheet after Stop still works as before — fc83cff
+- [x] 3.12 New texts correct in English and Polish — fc83cff
