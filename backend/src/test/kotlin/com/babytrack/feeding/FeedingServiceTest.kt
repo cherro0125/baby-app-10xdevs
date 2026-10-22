@@ -216,6 +216,20 @@ class FeedingServiceTest {
     }
 
     @Test
+    fun `upsert with allowCreate false on unknown id throws FeedingNotFoundException and inserts nothing`() {
+        val id = UUID.randomUUID()
+        `when`(feedingRepository.findById(id)).thenReturn(Optional.empty())
+
+        assertThrows<FeedingNotFoundException> {
+            feedingService.upsert(id, partnerId, startedAt, endedAt, MilkType.BREAST, null, null, allowCreate = false)
+        }
+        verify(feedingRepository, never()).insertIfAbsent(
+            any(), any(), any(), any(), any(), any(), anyOrNull(), anyOrNull(), any(),
+        )
+        verify(feedingRepository, never()).save(any<Feeding>())
+    }
+
+    @Test
     fun `upsert throws when endedAt is not after startedAt`() {
         assertThrows<IllegalArgumentException> {
             feedingService.upsert(UUID.randomUUID(), userId, startedAt, startedAt, MilkType.BREAST, null, null)

@@ -59,6 +59,25 @@ async function syncWithBackend(
   try {
     const api = createApiClient(() => token, onUnauth);
 
+    // Deletions: send queued own-feeding deletions first, so the download no longer returns them
+    const tombstones = await db.getAllAsync<{ id: string; feedingId: string }>(
+      `SELECT id, json_extract(payload, '$.feedingId') AS feedingId FROM sync_queue
+       WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') IS NOT NULL`,
+    );
+    for (const tombstone of tombstones) {
+      try {
+        const delRes = await api.request(`/api/feedings/${tombstone.feedingId}`, { method: 'DELETE' });
+        // 404: never uploaded or already gone — the deletion is done either way
+        if (delRes.ok || delRes.status === 404) {
+          await db.runAsync('DELETE FROM sync_queue WHERE id = ?', [tombstone.id]);
+        } else {
+          await db.runAsync('UPDATE sync_queue SET attempts = attempts + 1 WHERE id = ?', [tombstone.id]);
+        }
+      } catch {
+        // best-effort: keep the tombstone for next attempt
+      }
+    }
+
     // Download: upsert shared feed
     const res = await api.request('/api/feedings/shared');
     if (res.ok) {
@@ -72,17 +91,22 @@ async function syncWithBackend(
             [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
           );
         } else {
-          // Own row: server wins unless a local edit is still waiting for upload
-          const pending = await db.getFirstAsync<{ id: string }>(
-            'SELECT id FROM feedings WHERE id = ? AND synced = 0',
-            [row.id],
+          // Own row: server wins unless a local edit is still waiting for upload or the
+          // feeding was deleted locally. One statement, so a concurrent edit or delete can't be overwritten.
+          await db.runAsync(
+            `INSERT INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced)
+             SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1
+             WHERE NOT EXISTS (
+               SELECT 1 FROM sync_queue
+               WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') = ?
+             )
+             ON CONFLICT(id) DO UPDATE SET
+               milk_type = excluded.milk_type, started_at = excluded.started_at, ended_at = excluded.ended_at,
+               duration_minutes = excluded.duration_minutes, amount_ml = excluded.amount_ml, note = excluded.note,
+               created_at = excluded.created_at, updated_at = excluded.updated_at, synced = 1
+             WHERE feedings.synced = 1`,
+            [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now, row.id],
           );
-          if (!pending) {
-            await db.runAsync(
-              'INSERT OR REPLACE INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
-              [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
-            );
-          }
         }
       }
       // Purge stale partner rows not in server response
@@ -275,7 +299,15 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
         [id, myUserId],
       );
       if (isOwn) {
-        await db.runAsync('DELETE FROM feedings WHERE id = ? AND user_id = ?', [id, myUserId]);
+        // Tombstone first, so a sync running in between can't re-download the feeding;
+        // the next sync sends the deletion to the server (works offline).
+        await db.withTransactionAsync(async () => {
+          await db.runAsync(
+            'INSERT INTO sync_queue (id, operation, payload, created_at, attempts) VALUES (?, ?, ?, ?, 0)',
+            [uuid(), 'DELETE', JSON.stringify({ feedingId: id }), nowIso()],
+          );
+          await db.runAsync('DELETE FROM feedings WHERE id = ? AND user_id = ?', [id, myUserId]);
+        });
       } else {
         const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
         const res = await api.request(`/api/feedings/${id}`, { method: 'DELETE' });
@@ -305,9 +337,10 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
       const endedAt = changes.endedAt.toISOString();
       const now = nowIso();
       if (existing.userId !== user.id.toString()) {
-        // Partner entry: direct API PUT (full replacement)
+        // Partner entry: direct API PUT (full replacement); create=false so a feeding the partner
+        // deleted meanwhile isn't recreated as ours
         const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
-        const res = await api.request(`/api/feedings/${id}`, {
+        const res = await api.request(`/api/feedings/${id}?create=false`, {
           method: 'PUT',
           body: JSON.stringify({
             startedAt,
@@ -317,6 +350,11 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
             note: changes.note,
           }),
         });
+        if (res.status === 404) {
+          // Deleted by the partner meanwhile: drop the stale local copy
+          await db.runAsync('DELETE FROM feedings WHERE id = ?', [id]);
+          await reload();
+        }
         if (!res.ok) throw new Error(`Failed to update partner feeding: ${res.status}`);
         const updated = (await res.json()) as ServerFeeding;
         await db.runAsync(

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 import java.util.UUID
@@ -112,6 +113,7 @@ class FeedingController(private val feedingService: FeedingService) {
     fun upsert(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpsertFeedingRequest,
+        @RequestParam(defaultValue = "true") create: Boolean,
     ): ResponseEntity<FeedingDto> {
         val user = principal()
         val result = feedingService.upsert(
@@ -122,6 +124,7 @@ class FeedingController(private val feedingService: FeedingService) {
             milkType = request.milkType,
             amountMl = request.amountMl,
             note = request.note,
+            allowCreate = create,
         )
         val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
         return ResponseEntity.status(status).body(result.feeding.toDto())

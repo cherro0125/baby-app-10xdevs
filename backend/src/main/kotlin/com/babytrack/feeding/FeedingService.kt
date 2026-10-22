@@ -73,6 +73,7 @@ class FeedingService(
     /**
      * Creates the feeding under the client-supplied [id], or fully replaces it if it exists.
      * Unlike [update], null [amountMl] / [note] clear the stored value.
+     * With [allowCreate] false a missing [id] throws [FeedingNotFoundException] instead of being created.
      */
     @Transactional
     fun upsert(
@@ -83,16 +84,20 @@ class FeedingService(
         milkType: MilkType,
         amountMl: Int?,
         note: String?,
+        allowCreate: Boolean = true,
     ): UpsertResult {
         require(endedAt.isAfter(startedAt)) { "endedAt must be after startedAt" }
         val durationMinutes = ChronoUnit.MINUTES.between(startedAt, endedAt).toInt()
         // Atomic insert: overlapping PUTs for the same new id can't both create it, and a row that
         // already exists always goes through the owner/partner check below.
-        val inserted = feedingRepository.insertIfAbsent(
-            id, requesterId, milkType.name, startedAt, endedAt, durationMinutes, amountMl, note, Instant.now(),
-        )
-        if (inserted == 1) {
-            return UpsertResult(feedingRepository.findById(id).orElseThrow(), created = true)
+        // Partner edits pass allowCreate = false: a feeding deleted meanwhile must not come back as the editor's own.
+        if (allowCreate) {
+            val inserted = feedingRepository.insertIfAbsent(
+                id, requesterId, milkType.name, startedAt, endedAt, durationMinutes, amountMl, note, Instant.now(),
+            )
+            if (inserted == 1) {
+                return UpsertResult(feedingRepository.findById(id).orElseThrow(), created = true)
+            }
         }
         val existing = feedingRepository.findById(id)
             .orElseThrow { FeedingNotFoundException("Feeding not found") }
