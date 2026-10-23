@@ -89,8 +89,14 @@ Backend first (Phase 2), so the client can rely on `PUT` for sleeps and contract
 - **Shared engine contract.** Phases 3–5 depend on this module surface. Names are binding; internals are the implementer's.
 
   ```ts
+  // src/api/client.ts (added)
+  export type ApiClient = ReturnType<typeof createApiClient>;
+
   // src/sync/entity-sync.ts
-  export interface EntitySyncConfig<TServer extends { id: string; userId: string; createdAt: string }> {
+  type ServerRow = { id: string; userId: string; createdAt: string; endedAt: string | null };
+  /** The expo-sqlite subset the engine uses; AppDatabase satisfies it, the test adapter implements it. */
+  export type SyncDb = Pick<AppDatabase, 'runAsync' | 'getAllAsync' | 'getFirstAsync' | 'execAsync' | 'withTransactionAsync'>;
+  export interface EntitySyncConfig<TServer extends ServerRow> {
     table: 'feedings' | 'contractions' | 'sleeps';
     endpoint: string;              // '/api/feedings' — PUT/DELETE `${endpoint}/{id}`, GET `${endpoint}/shared`
     tombstoneKey: string;          // sync_queue payload key: 'feedingId' (existing), 'contractionId', 'sleepId'
@@ -98,15 +104,19 @@ Backend first (Phase 2), so the client can rely on `PUT` for sleeps and contract
     fromServer: (row: TServer) => unknown[];             // values in dataColumns order
     uploadBody: (row: Record<string, unknown>) => object; // full-replacement PUT body from a local snake_case row
   }
-  export function syncEntity<T>(db: AppDatabase, config: EntitySyncConfig<T>, userId: string, api: ApiClient): Promise<void>;
-  export function deleteEntry<T>(db: AppDatabase, config: EntitySyncConfig<T>, api: ApiClient, id: string, userId: string): Promise<void>;
-  export function editPartnerEntry<T>(db: AppDatabase, config: EntitySyncConfig<T>, api: ApiClient, id: string, body: object): Promise<void>;
+  export function syncEntity<T extends ServerRow>(db: SyncDb, config: EntitySyncConfig<T>, userId: string, api: ApiClient): Promise<void>;
+  export function deleteEntry<T extends ServerRow>(db: SyncDb, config: EntitySyncConfig<T>, api: ApiClient, id: string, userId: string): Promise<void>;
+  export function editPartnerEntry<T extends ServerRow>(db: SyncDb, config: EntitySyncConfig<T>, api: ApiClient, id: string, body: object): Promise<void>;
+  /** One shared in-flight promise: calls while a run is pending join it; cleared when it settles. */
+  export function createSyncRunner(): (run: () => Promise<void>) => Promise<void>;
 
   // src/sync/use-entity-sync.ts
-  export function useEntitySync<TLocal extends { id: string; endedAt: string | null }>(
+  export function useEntitySync<TLocal extends { id: string; userId: string; endedAt: string | null }>(
     config: EntitySyncConfig<any>, hasPartner: boolean, load: (db: AppDatabase) => Promise<TLocal[]>,
   ): {
-    rows: TLocal[]; isLoading: boolean; initialActiveId: string | null | undefined;
+    rows: TLocal[]; isLoading: boolean;
+    /** Own running row at first load (crash recovery); partner rows never count as running. */
+    initialActiveId: string | null | undefined;
     dbRef: React.RefObject<AppDatabase | null>; reload: () => Promise<void>;
     remove: (id: string) => Promise<void>; editPartner: (id: string, body: object) => Promise<void>;
   };
@@ -114,12 +124,19 @@ Backend first (Phase 2), so the client can rely on `PUT` for sleeps and contract
 
 - **Sync order and invariants**, moved verbatim from `use-feedings.ts`:
   1. Tombstones of the current user go first: `DELETE`; OK or 404 clears the tombstone.
-  2. Download: partner rows `INSERT OR REPLACE`. Own rows use one conditional upsert that skips `synced = 0` and tombstoned ids. Then the partner purge, then the own-synced purge windowed by the oldest `startedAt` when the page is full.
-  3. Upload: finished own `synced = 0` rows via `PUT` with the default `create=true`. Mark synced only `WHERE updated_at = ?`.
+  2. Download: server rows with a null end are ignored. Contractions can have legacy orphans where the POST succeeded and the PATCH failed, and they must not show up as running. Partner rows `INSERT OR REPLACE`. Own rows use one conditional upsert that skips `synced = 0` and tombstoned ids. Then the partner purge, then the own-synced purge windowed by the oldest `startedAt` when the page is full.
+  3. Legacy rows: after a successful download, for each own `synced = 2` row, if the server returned a row of the same user with the same `started_at` (`julianday` equality), delete the local row, because the server copy was just downloaded. Otherwise set `synced = 0`.
+  4. Upload: finished own `synced = 0` rows via `PUT` with the default `create=true`. Mark synced only `WHERE updated_at = ?`.
+
+  `synced = 2` rows are never overwritten by the download, never purged and never uploaded until step 3 resolves them.
 
   The in-flight guard makes overlapping callers join the running sync. Timestamps are compared with `julianday()`.
 - **Untouched times stay exact.** `buildEditTimes` must return the original instant for a time whose hour and minute were not changed. Otherwise editing a contraction's strength rounds its seconds away. This also changes feedings: an untouched time keeps its seconds.
-- **Contraction reconciliation ordering.** `user_version` 1 → 2 runs inside the memoised `runMigrations` before any sync: `DELETE FROM contractions WHERE synced = 1`, then delete every `sync_queue` row without a `$.feedingId` (legacy contraction `CREATE` / `FINALIZE` / `DELETE`). It runs once, in one transaction, after the v1 step. Sleep tombstones cannot exist yet at that point.
+- **Contraction reconciliation (no blind delete).** `user_version` 1 → 2 runs inside the memoised `runMigrations`, once, in one transaction, after the v1 step:
+  - `UPDATE contractions SET synced = 2 WHERE synced = 1` marks them as legacy rows not yet matched to the server;
+  - `DELETE FROM sync_queue WHERE json_extract(payload, '$.feedingId') IS NULL` drops the legacy contraction `CREATE` / `FINALIZE` / `DELETE` rows.
+
+  Do not delete synced rows. The dev server held 0 contractions at review time, so a delete would lose every contraction that exists only on the phone. The engine resolves `synced = 2` rows on the first successful download (see the sync rules). Sleep tombstones cannot exist yet at that point.
 - **`PRAGMA user_version` is shared app-wide.** This change claims `2`. Later local migrations (e.g. medicine-log) must use `3+`.
 
 ## Phase 1: Backend — V7/V8 migrations + Sleep domain
@@ -240,6 +257,7 @@ Extract the entity-agnostic sync from `use-feedings.ts` into `src/sync/`, switch
 - `syncEntity` never throws (best effort, as today).
 - `deleteEntry`: own row → tombstone `{ [tombstoneKey]: id, userId }` plus local delete in one transaction. Partner row → online `DELETE`; throws on non-OK, then deletes the local row.
 - `editPartnerEntry`: `PUT ?create=false`. 404 → drop the local row and throw. Other non-OK → throw. OK → write the returned server row into the local row (`synced = 1`).
+- Legacy rows (`synced = 2`) are resolved per the sync rules in Critical Implementation Details. Today only contractions have them; the rule is table-agnostic.
 
 #### 2. Hook helper
 
@@ -247,13 +265,19 @@ Extract the entity-agnostic sync from `use-feedings.ts` into `src/sync/`, switch
 
 **Intent**: The React side shared by all entity hooks.
 
-**Contract**: `useEntitySync(config, hasPartner, load)` as in Critical Implementation Details. It owns:
-- opening the database and `runMigrations`, the initial load and the initial sync;
-- `initialActiveId`;
-- the in-flight guard;
-- 5 s polling while `hasPartner`, and one sync when `hasPartner` changes.
-
-It uses refs for session, sign-out and the latest sync callback (no `eslint-disable`, see `use-feedings.ts` today). `remove` and `editPartner` throw when the DB or user isn't ready, so sheets stay open on failure.
+**Contract**: `useEntitySync(config, hasPartner, load)` as in Critical Implementation Details. It preserves today's `use-feedings.ts` behaviour:
+- **Init, effect on `[user]`:**
+  - `openDatabase` → `runMigrations` → `dbRef`.
+  - If there is a user: load rows, then set `isLoading = false` and `initialActiveId` (the first **own** row with `endedAt === null`) **before** the first sync.
+  - Then, if there is a token: sync and reload.
+  - With no user, set `isLoading = false`.
+- **In-flight guard** via `createSyncRunner()`.
+- **Polling** every 5 s, gated on `hasPartner && session`. One sync on a `hasPartner` change, not on mount, deferred with `setTimeout(…, 0)`. Refs hold session, sign-out and the latest sync callback (no `eslint-disable`).
+- **API client:** sync uses a client built from the current session token with `onUnauth = signOut`; `remove` and `editPartner` build theirs from the session ref, as today.
+- **`remove` and `editPartner`** throw when the DB or user isn't ready, so sheets stay open on failure.
+  - `remove` reloads after success.
+  - `editPartner` reloads in `finally`, so a row dropped after a 404 disappears at once.
+  - Both log with the entity hook's prefix and rethrow.
 
 #### 3. Feedings on the engine
 
@@ -264,7 +288,13 @@ It uses refs for session, sign-out and the latest sync callback (no `eslint-disa
 **Contract**:
 - A `FEEDING_SYNC` config with `table: 'feedings'`, `endpoint: '/api/feedings'`, `tombstoneKey: 'feedingId'`, and data columns `milk_type, started_at, ended_at, duration_minutes, amount_ml, note`.
 - `start`, `finalize` and the own-row branch of `edit` stay local SQL (floor durations).
-- The partner branch of `edit` calls `editPartner`; `remove` calls the engine's `remove`.
+- The `edit()` guards stay in the entity hook and apply to every entity:
+  - throw if `endedAt <= startedAt`;
+  - throw if the row no longer exists;
+  - own vs partner is decided by `existing.userId`.
+- The partner branch of `edit` calls `editPartner`. A successful partner edit writes the server row with `updated_at` = local now and `synced = 1`. `remove` calls the hook's `remove`.
+- The engine upload selects raw snake_case columns including `updated_at` (for the `WHERE updated_at = ?` guard) and passes them to `uploadBody`.
+- `activeFeeding` is computed from own rows only (no visible change: feeding server rows always have an end).
 - No other hook or screen changes.
 
 #### 4. Engine tests
@@ -286,7 +316,9 @@ It uses refs for session, sign-out and the latest sync callback (no `eslint-disa
   - partner rows missing from the server are purged;
   - own synced rows missing from the server are purged, but only inside the window of a full 200-row page;
   - partner edit 404 drops the row and rejects;
-  - overlapping `syncEntity` calls through the hook guard run one sync.
+  - a legacy `synced = 2` row with a matching server `started_at` is dropped, and one without a match becomes `synced = 0` and is uploaded in the same sync;
+  - server rows with a null end are not stored;
+  - `createSyncRunner`: overlapping runs share one promise and a run after settle starts fresh.
 
 ### Success Criteria:
 
@@ -319,9 +351,9 @@ Move contractions onto the engine, re-download them once under server ids, uploa
 
 **File**: `src/db/schema.ts`
 
-**Intent**: Align local contraction ids with the server and drop dead queue rows.
+**Intent**: Mark legacy contractions for matching against the server (never delete them) and drop dead queue rows.
 
-**Contract**: After the v1 step, if `user_version < 2`, in one transaction run `DELETE FROM contractions WHERE synced = 1`, `DELETE FROM sync_queue WHERE json_extract(payload, '$.feedingId') IS NULL`, and `PRAGMA user_version = 2`.
+**Contract**: After the v1 step, if `user_version < 2`, in one transaction run `UPDATE contractions SET synced = 2 WHERE synced = 1`, `DELETE FROM sync_queue WHERE json_extract(payload, '$.feedingId') IS NULL`, and `PRAGMA user_version = 2`. The engine resolves `synced = 2` rows on the next successful download.
 
 #### 2. Contractions hook on the engine
 
@@ -336,7 +368,8 @@ Move contractions onto the engine, re-download them once under server ids, uploa
   - Own row → local full update + `synced = 0`.
   - Partner row → `editPartner`.
 - Durations use `Math.floor` (seconds), like the server.
-- `UseContractionsResult.edit` is updated accordingly.
+- `activeContraction` and `initialActiveId` come from own rows only. A partner's row is never treated as my running contraction.
+- `UseContractionsResult.edit` is updated accordingly. Its only caller is `src/app/(app)/index.tsx`.
 
 #### 3. Shared edit pieces
 
@@ -348,7 +381,7 @@ Move contractions onto the engine, re-download them once under server ids, uploa
 - `TimeRow` (with its `Stepper`) moves out of `feeding-edit-sheet.tsx` unchanged and is exported from `time-row.tsx`.
 - `entry-edit.ts` keeps `buildEditTimes`, `parseAmountMl` and `FeedingEdit`. `buildEditTimes` returns the original instant for a time whose hour and minute equal the original local hour and minute.
 - New test cases: an untouched time keeps its seconds; changing only the end keeps the start exact.
-- Feeding imports are updated.
+- Imports of `@/components/feeding-edit` are updated in its four importers: `src/app/(app)/feeding-log.tsx`, `src/components/feeding-completion-sheet.tsx`, `src/hooks/use-feedings.ts` and the renamed test.
 
 #### 4. Contraction details fields and edit sheet
 
@@ -363,9 +396,9 @@ Move contractions onto the engine, re-download them once under server ids, uploa
   - `TimeRow` start/end, then `ContractionDetailsFields`;
   - errors stored as keys: `timeEdit.endAfterStart`, `feeding.edit.tooLong`, `feeding.edit.saveFailed`;
   - Save is disabled while saving; a rejection keeps the sheet open.
-- For the running contraction the sheet keeps today's behaviour: read-only start time with `timeEdit.stopFirst`, Cancel only.
+- For the running contraction the sheet shows a read-only start time with `timeEdit.stopFirst` and **Cancel only**. Today's Confirm is removed: it only re-saved the same values for own rows and threw for partner rows.
 - `index.tsx` wires `handleEditSave(id, changes)`, which awaits `edit`, closes on success, logs and rethrows on failure.
-- New EN/PL key `contractions.edit.title` ("Edit contraction" / "Edytuj skurcz"). `timeEdit.title` is removed if no longer referenced.
+- New EN/PL key `contractions.edit.title` ("Edit contraction" / "Edytuj skurcz"). `timeEdit.title` is removed from both locales (its only user was `time-edit-sheet.tsx`). `timeEdit.stopFirst` and `timeEdit.endAfterStart` stay.
 
 ### Success Criteria:
 
@@ -443,7 +476,10 @@ Add the local `sleeps` table and `use-sleeps.ts` on the engine, build the sleep 
 
 **Contract**:
 - `SleepLogScreen` mirrors `feeding-log.tsx`: `pendingStop`, crash-recovery modal ("End now" finalizes as Nap), edit sheet with a rethrowing `handleEditSave`, and the list.
-- A tab trigger `sleep-log` with label `tabs.sleep` sits between `feeding-log` and `partner` on native and web.
+- A tab trigger `sleep-log` with label `tabs.sleep` sits between `feeding-log` and `partner`:
+  - Native: `<NativeTabs.Trigger name="sleep-log">` with the icon `sf={{ default: 'moon', selected: 'moon.fill' }} md="bedtime"`, following the Settings tab (`app-tabs.tsx:41`); no new image asset.
+  - Web: `<TabTrigger name="sleep-log" href="/sleep-log" asChild>`.
+- Typed routes: Metro (`npx expo start --dev-client`) must have run once after adding `sleep-log.tsx`, so `.expo/types/router.d.ts` includes the route before `npx tsc --noEmit`.
 
 #### 5. Translations
 
@@ -516,7 +552,7 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 - **Backend:** no Flyway migration. `sleeps` and `contractions` tables already fit; `PUT` is additive.
 - **Local:**
-  - `user_version` 1 → 2 deletes synced contractions (they are re-downloaded on the next sync) and the legacy contraction queue rows.
+  - `user_version` 1 → 2 marks synced contractions as legacy (`synced = 2`) and drops the legacy contraction queue rows. On the first successful sync, each legacy row is matched to the server by user + `started_at`: a match is replaced by the server copy, and no match re-uploads under the local id. Nothing is lost if the server lacks rows. A legacy row edited before its first sync is uploaded under its local id and may duplicate its server copy.
   - Own contractions deleted locally before the update reappear once and can be deleted again. Their deletions were never sent and the queue held only local ids.
   - Contractions already on the server keep their server-generated ids and get duplicates from earlier edits; those duplicates are not cleaned up.
 - **Old app builds** keep using `POST` / `PATCH`, which still work.

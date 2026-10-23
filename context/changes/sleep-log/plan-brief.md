@@ -29,6 +29,7 @@ The sleep backend exists (Phase 1, `2832d8c`), but it has no `PUT` upsert. The c
 | Engine testing | Jest on real SQLite (`node:sqlite`, verified under jest-expo) + mocked fetch | Catches sync regressions before device testing, with no new dependency. |
 | UI reuse | Share `TimeRow`, `buildEditTimes`, per-entity details fields | Removes the fiddly duplicates without abstracting screens that differ. |
 | Untouched times | Kept exact (seconds preserved) | Otherwise editing a contraction's strength would change its duration. |
+| Contraction reconciliation | Mark as legacy (`synced = 2`), match to the server by `started_at` on the first sync | A blind delete would lose contractions the server doesn't have (dev server had 0). |
 
 ## Scope
 
@@ -36,7 +37,7 @@ The sleep backend exists (Phase 1, `2832d8c`), but it has no `PUT` upsert. The c
 - `PUT` upserts for sleeps and contractions.
 - Sync engine plus its tests.
 - Feedings, contractions and sleeps on the engine.
-- One-time contraction re-download (`user_version` 2).
+- One-time contraction reconciliation with the server (`user_version` 2).
 - Contraction full edit.
 - Sleep data, UI and tab.
 - EN/PL strings.
@@ -66,7 +67,7 @@ The sleep backend exists (Phase 1, `2832d8c`), but it has no `PUT` upsert. The c
 | 1. Backend sleep domain | Done (`2832d8c`) | — |
 | 2. Backend upserts | `PUT` for sleeps + contractions, `userId` mirror fix, tests | Contract drift from the feeding upsert |
 | 3. Engine + feedings | Shared engine, feedings on it, real-SQLite tests | Regressing the just-verified feeding sync |
-| 4. Contractions | Engine, re-download, strength/note sync, full edit sheet | One-time reconciliation; pre-update local deletions reappear once |
+| 4. Contractions | Engine, legacy match-or-reupload, strength/note sync, full edit sheet | One-time reconciliation; pre-update local deletions reappear once |
 | 5. Sleep data + UI | Table, hook, components, tab, i18n | Long sessions across midnight in the edit sheet |
 
 **Prerequisites:** dev backend and Metro running; dev clients on the iPhone and the Galaxy S25 Ultra; two linked test accounts.
