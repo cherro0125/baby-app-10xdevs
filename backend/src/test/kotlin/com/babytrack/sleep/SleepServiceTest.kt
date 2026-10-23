@@ -232,6 +232,22 @@ class SleepServiceTest {
     }
 
     @Test
+    fun `upsert with allowCreate false on existing partner row replaces it without inserting`() {
+        val sleep = makeSleep(userId).apply { note = "Before" }
+        `when`(sleepRepository.findById(sleep.id)).thenReturn(Optional.of(sleep))
+        `when`(partnerService.getPartnerId(partnerId)).thenReturn(userId)
+        `when`(sleepRepository.save(any<Sleep>())).thenAnswer { it.arguments[0] as Sleep }
+
+        val result = sleepService.upsert(sleep.id, partnerId, startedAt, endedAt, SleepType.OTHER, null, allowCreate = false)
+
+        assertEquals(false, result.created)
+        assertEquals(userId, result.sleep.userId)
+        assertEquals(SleepType.OTHER, result.sleep.sleepType)
+        assertNull(result.sleep.note)
+        verify(sleepRepository, never()).insertIfAbsent(any(), any(), any(), any(), any(), any(), anyOrNull(), any())
+    }
+
+    @Test
     fun `upsert throws when endedAt is not after startedAt`() {
         assertThrows<IllegalArgumentException> {
             sleepService.upsert(UUID.randomUUID(), userId, startedAt, startedAt, SleepType.NAP, null)

@@ -148,6 +148,24 @@ class ContractionServiceTest {
     }
 
     @Test
+    fun `upsert with allowCreate false on existing partner row replaces it without inserting`() {
+        val contraction = makeContraction(userId).apply { strength = 4 }
+        `when`(contractionRepository.findById(contraction.id)).thenReturn(Optional.of(contraction))
+        `when`(partnerService.getPartnerId(partnerId)).thenReturn(userId)
+        `when`(contractionRepository.save(any<Contraction>())).thenAnswer { it.arguments[0] as Contraction }
+
+        val result = contractionService.upsert(contraction.id, partnerId, startedAt, endedAt, 8, "Partner", allowCreate = false)
+
+        assertEquals(false, result.created)
+        assertEquals(userId, result.contraction.userId)
+        assertEquals(8, result.contraction.strength)
+        assertEquals("Partner", result.contraction.note)
+        verify(contractionRepository, never()).insertIfAbsent(
+            any(), any(), any(), any(), any(), anyOrNull(), anyOrNull(), any(),
+        )
+    }
+
+    @Test
     fun `upsert throws when endedAt is not after startedAt`() {
         assertThrows<IllegalArgumentException> {
             contractionService.upsert(UUID.randomUUID(), userId, startedAt, startedAt, null, null)
