@@ -8,6 +8,8 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
+data class UpsertResult(val feeding: Feeding, val created: Boolean)
+
 @Service
 class FeedingService(
     private val feedingRepository: FeedingRepository,
@@ -27,6 +29,8 @@ class FeedingService(
         val user = userRepository.getReferenceById(userId)
         val feeding = Feeding(
             user = user,
+            // userId is a read-only mirror of user_id; set it so the returned DTO is correct before reload.
+            userId = userId,
             milkType = milkType,
             startedAt = startedAt,
             endedAt = endedAt,
@@ -64,6 +68,51 @@ class FeedingService(
         feeding.durationMinutes = ChronoUnit.MINUTES.between(effectiveStartedAt, effectiveEndedAt).toInt()
         feeding.updatedAt = Instant.now()
         return feedingRepository.save(feeding)
+    }
+
+    /**
+     * Creates the feeding under the client-supplied [id], or fully replaces it if it exists.
+     * Unlike [update], null [amountMl] / [note] clear the stored value.
+     * With [allowCreate] false a missing [id] throws [FeedingNotFoundException] instead of being created.
+     */
+    @Transactional
+    fun upsert(
+        id: UUID,
+        requesterId: UUID,
+        startedAt: Instant,
+        endedAt: Instant,
+        milkType: MilkType,
+        amountMl: Int?,
+        note: String?,
+        allowCreate: Boolean = true,
+    ): UpsertResult {
+        require(endedAt.isAfter(startedAt)) { "endedAt must be after startedAt" }
+        val durationMinutes = ChronoUnit.MINUTES.between(startedAt, endedAt).toInt()
+        // Atomic insert: overlapping PUTs for the same new id can't both create it, and a row that
+        // already exists always goes through the owner/partner check below.
+        // Partner edits pass allowCreate = false: a feeding deleted meanwhile must not come back as the editor's own.
+        if (allowCreate) {
+            val inserted = feedingRepository.insertIfAbsent(
+                id, requesterId, milkType.name, startedAt, endedAt, durationMinutes, amountMl, note, Instant.now(),
+            )
+            if (inserted == 1) {
+                return UpsertResult(feedingRepository.findById(id).orElseThrow(), created = true)
+            }
+        }
+        val existing = feedingRepository.findById(id)
+            .orElseThrow { FeedingNotFoundException("Feeding not found") }
+        val partnerId = partnerService.getPartnerId(requesterId)
+        if (existing.userId != requesterId && existing.userId != partnerId) {
+            throw FeedingNotFoundException("Feeding not found")
+        }
+        existing.startedAt = startedAt
+        existing.endedAt = endedAt
+        existing.milkType = milkType
+        existing.amountMl = amountMl
+        existing.note = note
+        existing.durationMinutes = durationMinutes
+        existing.updatedAt = Instant.now()
+        return UpsertResult(feedingRepository.save(existing), created = false)
     }
 
     @Transactional(readOnly = true)

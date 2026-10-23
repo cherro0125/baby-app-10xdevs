@@ -16,7 +16,7 @@
       }
     },
     "android": {
-      "package": "com.babytrack.app",
+      "package": "com.dominik.babytrack",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

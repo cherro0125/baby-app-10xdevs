@@ -6,9 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/auth/session-provider';
 
 import { FeedingCompletionSheet } from '@/components/feeding-completion-sheet';
+import type { FeedingEdit } from '@/components/feeding-edit';
+import { FeedingEditSheet } from '@/components/feeding-edit-sheet';
 import { FeedingList } from '@/components/feeding-list';
 import { FeedingTimer } from '@/components/feeding-timer';
-import { FeedingTimeEditSheet } from '@/components/feeding-time-edit-sheet';
 import { IncompleteFeedingModal } from '@/components/incomplete-feeding-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -76,12 +77,14 @@ export default function FeedingLogScreen() {
     }
   }
 
-  async function handleEditConfirm(id: string, patch: { startedAt?: Date; endedAt?: Date }) {
+  async function handleEditSave(id: string, changes: FeedingEdit) {
     try {
-      await edit(id, patch);
+      await edit(id, changes);
       setEditTarget(null);
     } catch (e) {
       console.error('[FeedingLogScreen] edit failed', e);
+      // Rethrown so the sheet stays open and shows the error.
+      throw e;
     }
   }
 
@@ -97,10 +100,10 @@ export default function FeedingLogScreen() {
         onSave={handleSave}
         onCancel={() => setPendingStop(null)}
       />
-      <FeedingTimeEditSheet
+      <FeedingEditSheet
         feeding={editTarget}
         onClose={() => setEditTarget(null)}
-        onConfirm={handleEditConfirm}
+        onSave={handleEditSave}
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>

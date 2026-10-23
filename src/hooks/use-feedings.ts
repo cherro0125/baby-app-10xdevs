@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { createApiClient } from '@/api/client';
 import { useSession } from '@/auth/session-provider';
+import type { FeedingEdit } from '@/components/feeding-edit';
 import type { AppDatabase } from '@/db/schema';
 import { openDatabase, runMigrations } from '@/db/schema';
 import type { LocalFeeding, MilkType } from '@/db/types';
@@ -37,6 +38,9 @@ async function loadFeedings(db: AppDatabase): Promise<LocalFeeding[]> {
   );
 }
 
+// Matches the backend's findTop200…OrderByStartedAtDesc for GET /api/feedings/shared.
+const SHARED_PAGE_SIZE = 200;
+
 interface ServerFeeding {
   id: string;
   userId: string;
@@ -58,6 +62,29 @@ async function syncWithBackend(
   try {
     const api = createApiClient(() => token, onUnauth);
 
+    // Deletions: send queued own-feeding deletions first, so the download no longer returns them.
+    // Only this user's: another account's token would get a 404 and drop the tombstone.
+    // Tombstones written before userId was recorded are sent by whoever syncs first.
+    const tombstones = await db.getAllAsync<{ id: string; feedingId: string }>(
+      `SELECT id, json_extract(payload, '$.feedingId') AS feedingId FROM sync_queue
+       WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') IS NOT NULL
+         AND COALESCE(json_extract(payload, '$.userId'), ?) = ?`,
+      [userId, userId],
+    );
+    for (const tombstone of tombstones) {
+      try {
+        const delRes = await api.request(`/api/feedings/${tombstone.feedingId}`, { method: 'DELETE' });
+        // 404: never uploaded or already gone — the deletion is done either way
+        if (delRes.ok || delRes.status === 404) {
+          await db.runAsync('DELETE FROM sync_queue WHERE id = ?', [tombstone.id]);
+        } else {
+          await db.runAsync('UPDATE sync_queue SET attempts = attempts + 1 WHERE id = ?', [tombstone.id]);
+        }
+      } catch {
+        // best-effort: keep the tombstone for next attempt
+      }
+    }
+
     // Download: upsert shared feed
     const res = await api.request('/api/feedings/shared');
     if (res.ok) {
@@ -71,17 +98,22 @@ async function syncWithBackend(
             [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
           );
         } else {
-          // Own row: insert-if-new to preserve unsynced local state
-          const exists = await db.getFirstAsync<{ id: string }>(
-            'SELECT id FROM feedings WHERE id = ?',
-            [row.id],
+          // Own row: server wins unless a local edit is still waiting for upload or the
+          // feeding was deleted locally. One statement, so a concurrent edit or delete can't be overwritten.
+          await db.runAsync(
+            `INSERT INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced)
+             SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1
+             WHERE NOT EXISTS (
+               SELECT 1 FROM sync_queue
+               WHERE operation = 'DELETE' AND json_extract(payload, '$.feedingId') = ?
+             )
+             ON CONFLICT(id) DO UPDATE SET
+               milk_type = excluded.milk_type, started_at = excluded.started_at, ended_at = excluded.ended_at,
+               duration_minutes = excluded.duration_minutes, amount_ml = excluded.amount_ml, note = excluded.note,
+               created_at = excluded.created_at, updated_at = excluded.updated_at, synced = 1
+             WHERE feedings.synced = 1`,
+            [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now, row.id],
           );
-          if (!exists) {
-            await db.runAsync(
-              'INSERT INTO feedings (id, user_id, milk_type, started_at, ended_at, duration_minutes, amount_ml, note, created_at, updated_at, synced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
-              [row.id, row.userId, row.milkType, row.startedAt, row.endedAt, row.durationMinutes, row.amountMl, row.note, row.createdAt, now],
-            );
-          }
         }
       }
       // Purge stale partner rows not in server response
@@ -95,17 +127,31 @@ async function syncWithBackend(
       } else {
         await db.runAsync('DELETE FROM feedings WHERE user_id != ?', [userId]);
       }
+      // Purge own rows deleted on the server (e.g. by the partner): a synced row missing from the
+      // response is gone there. Unsynced rows are kept for upload. A full page only covers its
+      // startedAt window, so older rows are left alone. julianday() because server and local
+      // timestamps differ in fractional-second digits.
+      const ownIds = serverRows.filter((r) => r.userId === userId).map((r) => r.id);
+      // The server sorts by startedAt DESC, so the last row is the oldest.
+      const windowStart =
+        serverRows.length >= SHARED_PAGE_SIZE ? serverRows[serverRows.length - 1].startedAt : null;
+      const notInOwn = ownIds.length > 0 ? `AND id NOT IN (${ownIds.map(() => '?').join(',')})` : '';
+      await db.runAsync(
+        `DELETE FROM feedings WHERE user_id = ? AND synced = 1 ${notInOwn}
+         AND (? IS NULL OR julianday(started_at) >= julianday(?))`,
+        [userId, ...ownIds, windowStart, windowStart],
+      );
     }
 
-    // Upload: push finalized unsynced own feedings (single POST — no two-step)
+    // Upload: PUT finalized unsynced own feedings under their local id (idempotent upsert)
     const unsynced = await db.getAllAsync<LocalFeeding>(
       `SELECT ${FEEDING_COLS} FROM feedings WHERE synced = 0 AND ended_at IS NOT NULL AND user_id = ?`,
       [userId],
     );
     for (const row of unsynced) {
       try {
-        const postRes = await api.request('/api/feedings', {
-          method: 'POST',
+        const putRes = await api.request(`/api/feedings/${row.id}`, {
+          method: 'PUT',
           body: JSON.stringify({
             startedAt: row.startedAt,
             endedAt: row.endedAt,
@@ -114,8 +160,12 @@ async function syncWithBackend(
             note: row.note,
           }),
         });
-        if (postRes.ok) {
-          await db.runAsync('UPDATE feedings SET synced = 1 WHERE id = ?', [row.id]);
+        if (putRes.ok) {
+          // Only if not edited while the request was in flight — otherwise the edit would never upload
+          await db.runAsync('UPDATE feedings SET synced = 1 WHERE id = ? AND updated_at = ?', [
+            row.id,
+            row.updatedAt,
+          ]);
         }
       } catch {
         // best-effort: leave synced=0 for next attempt
@@ -141,7 +191,7 @@ export interface UseFeedingsResult {
     note?: string | null,
   ) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  edit: (id: string, patch: { startedAt?: Date; endedAt?: Date }) => Promise<void>;
+  edit: (id: string, changes: FeedingEdit) => Promise<void>;
 }
 
 export function useFeedings(hasPartner: boolean): UseFeedingsResult {
@@ -152,11 +202,28 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
   const [feedings, setFeedings] = useState<LocalFeeding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [initialActiveId, setInitialActiveId] = useState<string | null | undefined>(undefined);
+  // The running sync, so the 5 s poll joins it instead of overlapping: an older download landing
+  // after a newer upload would briefly revert or drop rows.
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
+
+  // Latest syncAndReload for the polling effects, so they don't restart on every render
+  const syncAndReloadRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     sessionRef.current = session;
     signOutRef.current = signOut;
   });
+
+  function sync(db: AppDatabase, userId: string, token: string): Promise<void> {
+    if (!syncInFlightRef.current) {
+      syncInFlightRef.current = syncWithBackend(db, userId, token, () => signOutRef.current()).finally(
+        () => {
+          syncInFlightRef.current = null;
+        },
+      );
+    }
+    return syncInFlightRef.current;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -174,7 +241,7 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
 
         const token = sessionRef.current;
         if (token) {
-          await syncWithBackend(db, userId, token, () => signOutRef.current());
+          await sync(db, userId, token);
           if (!cancelled) {
             const syncedRows = await loadFeedings(db);
             setFeedings(syncedRows);
@@ -189,20 +256,36 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
     return () => { cancelled = true; };
   }, [user]);
 
+  function syncAndReload() {
+    const db = dbRef.current;
+    const token = sessionRef.current;
+    if (!db || !token || !user) return;
+    sync(db, user.id.toString(), token)
+      .then(() => loadFeedings(db))
+      .then(setFeedings)
+      .catch(console.error);
+  }
+
+  useEffect(() => {
+    syncAndReloadRef.current = syncAndReload;
+  });
+
   // Poll every 5s when a partner is linked
   useEffect(() => {
     if (!hasPartner || !session) return;
-    const id = setInterval(() => {
-      const db = dbRef.current;
-      const token = sessionRef.current;
-      if (!db || !token || !user) return;
-      syncWithBackend(db, user.id.toString(), token, () => signOutRef.current())
-        .then(() => loadFeedings(db))
-        .then(setFeedings)
-        .catch(console.error);
-    }, 5_000);
+    const id = setInterval(() => syncAndReloadRef.current(), 5_000);
     return () => clearInterval(id);
   }, [hasPartner, session, user]);
+
+  // Sync once as soon as the link changes: after an unlink the polling stops, and this sync's
+  // download no longer returns the partner's feedings, so they are purged from the list.
+  const prevHasPartnerRef = useRef(hasPartner);
+  useEffect(() => {
+    if (prevHasPartnerRef.current === hasPartner) return;
+    prevHasPartnerRef.current = hasPartner;
+    const id = setTimeout(() => syncAndReloadRef.current(), 0);
+    return () => clearTimeout(id);
+  }, [hasPartner]);
 
   async function reload() {
     const db = dbRef.current;
@@ -245,7 +328,8 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
       );
       if (!existing) return;
       const endedAtIso = endedAt.toISOString();
-      const durationMinutes = Math.round(
+      // Floor, like the server's ChronoUnit.MINUTES.between, so the value doesn't change after sync
+      const durationMinutes = Math.floor(
         (endedAt.getTime() - new Date(existing.startedAt).getTime()) / 60_000,
       );
       const now = nowIso();
@@ -270,7 +354,15 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
         [id, myUserId],
       );
       if (isOwn) {
-        await db.runAsync('DELETE FROM feedings WHERE id = ? AND user_id = ?', [id, myUserId]);
+        // Tombstone first, so a sync running in between can't re-download the feeding;
+        // the next sync sends the deletion to the server (works offline).
+        await db.withTransactionAsync(async () => {
+          await db.runAsync(
+            'INSERT INTO sync_queue (id, operation, payload, created_at, attempts) VALUES (?, ?, ?, ?, 0)',
+            [uuid(), 'DELETE', JSON.stringify({ feedingId: id, userId: myUserId }), nowIso()],
+          );
+          await db.runAsync('DELETE FROM feedings WHERE id = ? AND user_id = ?', [id, myUserId]);
+        });
       } else {
         const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
         const res = await api.request(`/api/feedings/${id}`, { method: 'DELETE' });
@@ -284,59 +376,59 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
     }
   }
 
-  async function edit(id: string, patch: { startedAt?: Date; endedAt?: Date }): Promise<void> {
+  async function edit(id: string, changes: FeedingEdit): Promise<void> {
     const db = dbRef.current;
-    if (!db || !user) return;
+    // Throw rather than return: the edit sheet treats a resolved promise as saved and closes.
+    if (!db || !user) throw new Error('edit before the feedings database is ready');
     try {
-      const myUserId = user.id.toString();
-      const isOwn = await db.getFirstAsync<{ id: string }>(
-        'SELECT id FROM feedings WHERE id = ? AND user_id = ?',
-        [id, myUserId],
+      if (changes.endedAt <= changes.startedAt) {
+        throw new Error('endedAt must be after startedAt');
+      }
+      const existing = await db.getFirstAsync<LocalFeeding>(
+        `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ?`,
+        [id],
       );
-      if (!isOwn) {
-        // Partner entry: direct API PATCH
-        const existing = await db.getFirstAsync<LocalFeeding>(
-          `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ?`,
-          [id],
-        );
-        if (!existing) return;
-        const endedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
-        if (!endedAt) throw new Error('Cannot edit active partner feeding');
-        const body: { startedAt?: string; endedAt: string } = { endedAt };
-        if (patch.startedAt) body.startedAt = patch.startedAt.toISOString();
+      // E.g. a partner feeding dropped after a 404 while the sheet stayed open
+      if (!existing) throw new Error(`Feeding ${id} no longer exists`);
+      const startedAt = changes.startedAt.toISOString();
+      const endedAt = changes.endedAt.toISOString();
+      const now = nowIso();
+      if (existing.userId !== user.id.toString()) {
+        // Partner entry: direct API PUT (full replacement); create=false so a feeding the partner
+        // deleted meanwhile isn't recreated as ours
         const api = createApiClient(() => sessionRef.current, () => signOutRef.current());
-        const res = await api.request(`/api/feedings/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
+        const res = await api.request(`/api/feedings/${id}?create=false`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            startedAt,
+            endedAt,
+            milkType: changes.milkType,
+            amountMl: changes.amountMl,
+            note: changes.note,
+          }),
         });
+        if (res.status === 404) {
+          // Deleted by the partner meanwhile: drop the stale local copy
+          await db.runAsync('DELETE FROM feedings WHERE id = ?', [id]);
+          await reload();
+        }
         if (!res.ok) throw new Error(`Failed to update partner feeding: ${res.status}`);
         const updated = (await res.json()) as ServerFeeding;
-        const now = nowIso();
         await db.runAsync(
-          'UPDATE feedings SET started_at = ?, ended_at = ?, duration_minutes = ?, updated_at = ? WHERE id = ?',
-          [updated.startedAt, updated.endedAt, updated.durationMinutes, now, id],
+          'UPDATE feedings SET started_at = ?, ended_at = ?, milk_type = ?, duration_minutes = ?, amount_ml = ?, note = ?, updated_at = ? WHERE id = ?',
+          [updated.startedAt, updated.endedAt, updated.milkType, updated.durationMinutes, updated.amountMl, updated.note, now, id],
         );
         await reload();
         return;
       }
-      // Own entry: local-first flow
-      const existing = await db.getFirstAsync<LocalFeeding>(
-        `SELECT ${FEEDING_COLS} FROM feedings WHERE id = ? AND user_id = ?`,
-        [id, myUserId],
+      // Own entry: local-first flow, uploaded by the next sync
+      // Floor, like the server's ChronoUnit.MINUTES.between, so the value doesn't change after sync
+      const durationMinutes = Math.floor(
+        (changes.endedAt.getTime() - changes.startedAt.getTime()) / 60_000,
       );
-      if (!existing) return;
-      const newStartedAt = patch.startedAt?.toISOString() ?? existing.startedAt;
-      const newEndedAt = patch.endedAt?.toISOString() ?? existing.endedAt;
-      if (newEndedAt && newEndedAt <= newStartedAt) {
-        throw new Error('endedAt must be after startedAt');
-      }
-      const newDuration = newEndedAt
-        ? Math.round((new Date(newEndedAt).getTime() - new Date(newStartedAt).getTime()) / 60_000)
-        : null;
-      const now = nowIso();
       await db.runAsync(
-        'UPDATE feedings SET started_at = ?, ended_at = ?, duration_minutes = ?, updated_at = ?, synced = 0 WHERE id = ?',
-        [newStartedAt, newEndedAt, newDuration, now, id],
+        'UPDATE feedings SET started_at = ?, ended_at = ?, milk_type = ?, duration_minutes = ?, amount_ml = ?, note = ?, updated_at = ?, synced = 0 WHERE id = ?',
+        [startedAt, endedAt, changes.milkType, durationMinutes, changes.amountMl, changes.note, now, id],
       );
       await reload();
     } catch (e) {

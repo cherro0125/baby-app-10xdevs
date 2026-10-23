@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { MILK_TYPES } from '@/components/milk-types';
+import { FeedingDetailsFields } from '@/components/feeding-details-fields';
+import { parseAmountMl } from '@/components/feeding-edit';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -21,19 +22,27 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
   const [milkType, setMilkType] = useState<MilkType>('BREAST');
   const [amountText, setAmountText] = useState('');
   const [note, setNote] = useState('');
+  const [invalidAmount, setInvalidAmount] = useState(false);
 
-  function handleSave() {
-    const amountMl = amountText.trim() ? parseInt(amountText.trim(), 10) || null : null;
-    onSave(milkType, amountMl, note.trim() || null);
+  function reset() {
     setMilkType('BREAST');
     setAmountText('');
     setNote('');
+    setInvalidAmount(false);
+  }
+
+  function handleSave() {
+    const amountMl = parseAmountMl(amountText);
+    if (amountMl === 'invalid') {
+      setInvalidAmount(true);
+      return;
+    }
+    onSave(milkType, amountMl, note.trim() || null);
+    reset();
   }
 
   function handleCancel() {
-    setMilkType('BREAST');
-    setAmountText('');
-    setNote('');
+    reset();
     onCancel();
   }
 
@@ -47,47 +56,20 @@ export function FeedingCompletionSheet({ visible, onSave, onCancel }: FeedingCom
             {t('feeding.details')}
           </ThemedText>
 
-          <View style={styles.segmentedControl}>
-            {MILK_TYPES.map((mt) => (
-              <Pressable
-                key={mt.value}
-                onPress={() => setMilkType(mt.value)}
-                style={[
-                  styles.segment,
-                  {
-                    backgroundColor:
-                      mt.value === milkType ? theme.backgroundSelected : theme.backgroundElement,
-                  },
-                ]}>
-                <ThemedText
-                  type="small"
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  themeColor={mt.value === milkType ? 'text' : 'textSecondary'}>
-                  {t(`feeding.milkType.${mt.key}`)}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </View>
-
-          <TextInput
-            style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            placeholder={t('feeding.amountPlaceholder')}
-            placeholderTextColor={theme.textSecondary}
-            value={amountText}
-            onChangeText={setAmountText}
-            keyboardType="numeric"
+          <FeedingDetailsFields
+            milkType={milkType}
+            onMilkTypeChange={setMilkType}
+            amountText={amountText}
+            onAmountTextChange={setAmountText}
+            note={note}
+            onNoteChange={setNote}
           />
 
-          <TextInput
-            style={[styles.input, styles.noteInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            placeholder={t('common.addNote')}
-            placeholderTextColor={theme.textSecondary}
-            value={note}
-            onChangeText={setNote}
-            multiline
-          />
-
+          {invalidAmount && (
+            <ThemedText type="small" themeColor="danger" style={styles.error}>
+              {t('feeding.edit.invalidAmount')}
+            </ThemedText>
+          )}
           <View style={styles.actions}>
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.backgroundElement }]}
@@ -123,23 +105,8 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
   },
-  segmentedControl: {
-    flexDirection: 'row',
-    gap: Spacing.one,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
-    alignItems: 'center',
-  },
-  input: {
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    fontSize: 14,
-  },
-  noteInput: {
-    minHeight: 64,
+  error: {
+    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',

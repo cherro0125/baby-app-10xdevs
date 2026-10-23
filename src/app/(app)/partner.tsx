@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,15 +9,20 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { InviterInfoDto } from '@/hooks/use-partner';
 import { usePartner } from '@/hooks/use-partner';
+import { useTheme } from '@/hooks/use-theme';
 
 type CodeError = 'expired' | 'notFound' | 'codeLength' | 'alreadyLinked' | 'generic';
 
 export default function PartnerScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
-  const { partner, isLoading, generateInvite, getInviteInfo, acceptInvite, unlink } = usePartner();
+  const { partner, isLoading, refresh, generateInvite, getInviteInfo, acceptInvite, unlink } =
+    usePartner();
 
-  const [invite, setInvite] = useState<{ token: string; deepLink: string } | null>(null);
+  const [invite, setInvite] = useState<{ token: string; deepLink: string; expiresAt: string } | null>(
+    null,
+  );
   const [inviteFailed, setInviteFailed] = useState(false);
   const [unlinkPending, setUnlinkPending] = useState(false);
 
@@ -31,6 +36,28 @@ export default function PartnerScreen() {
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [inviterInfo, setInviterInfo] = useState<InviterInfoDto | null>(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
+
+  // While my invite code is shown on this screen, poll so it switches to linked once the partner
+  // accepts. Each poll starts after the previous one finished (slow responses still land), and
+  // polling stops when the code expires.
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    if (!invite || partner || !isFocused) return;
+    const expiresAt = Date.parse(invite.expiresAt);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      if (Date.now() >= expiresAt) return;
+      await refresh().catch(console.error);
+      if (!cancelled) timer = setTimeout(poll, 3_000);
+    }
+    timer = setTimeout(poll, 3_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invite, partner, isFocused]);
 
   // Auto-handle deep link token on mount / when it changes
   useEffect(() => {
@@ -101,7 +128,7 @@ export default function PartnerScreen() {
     setInviteFailed(false);
     try {
       const result = await generateInvite();
-      setInvite({ token: result.token, deepLink: result.deepLink });
+      setInvite({ token: result.token, deepLink: result.deepLink, expiresAt: result.expiresAt });
     } catch (e) {
       console.error('[PartnerScreen] generateInvite failed', e);
       setInviteFailed(true);
@@ -229,7 +256,8 @@ export default function PartnerScreen() {
 
           <ThemedView style={styles.codeEntryRow}>
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, { color: theme.text }]}
+              placeholderTextColor={theme.textSecondary}
               value={codeInput}
               onChangeText={(text) => { setCodeInput(text.toUpperCase()); setCodeError(null); }}
               placeholder="ABCD1234"
@@ -292,6 +320,8 @@ const styles = StyleSheet.create({
   code: {
     fontFamily: 'monospace',
     fontSize: 36,
+    // ThemedText's default lineHeight (24) clips 36px glyphs on iOS.
+    lineHeight: 44,
     fontWeight: '700',
     letterSpacing: 4,
   },
