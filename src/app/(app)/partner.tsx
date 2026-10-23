@@ -9,11 +9,13 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { InviterInfoDto } from '@/hooks/use-partner';
 import { usePartner } from '@/hooks/use-partner';
+import { useTheme } from '@/hooks/use-theme';
 
 type CodeError = 'expired' | 'notFound' | 'codeLength' | 'alreadyLinked' | 'generic';
 
 export default function PartnerScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { token: deepLinkToken } = useLocalSearchParams<{ token?: string }>();
   const { partner, isLoading, refresh, generateInvite, getInviteInfo, acceptInvite, unlink } =
     usePartner();
@@ -254,7 +256,8 @@ export default function PartnerScreen() {
 
           <ThemedView style={styles.codeEntryRow}>
             <TextInput
-              style={styles.codeInput}
+              style={[styles.codeInput, { color: theme.text }]}
+              placeholderTextColor={theme.textSecondary}
               value={codeInput}
               onChangeText={(text) => { setCodeInput(text.toUpperCase()); setCodeError(null); }}
               placeholder="ABCD1234"
