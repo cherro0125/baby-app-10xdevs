@@ -30,3 +30,6 @@ User report (manual testing of `language-switch`, 2026-10-21): "Jak edytuję akt
   - The note is capped at 2000 characters and the amount at 10,000 ml.
   - Client durations use floor, like the server.
   - Rest of F6 (download transaction, writing only changed rows) is queued in `follow-ups/review-fixes.md`.
+- Retest after the full review (2026-10-23) needed two more out-of-plan commits:
+  - `93ef3ad`: `PartnerProvider` re-checks the link every 10 s while linked, so an unlink on the partner's device shows up. `useFeedings` syncs once when the link changes, so the partner's feedings disappear after an unlink.
+  - `f0cbd3c`: the invite code input uses the theme's text color, so it is no longer invisible in dark mode.
