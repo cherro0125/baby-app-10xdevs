@@ -96,6 +96,25 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
+  // While linked, re-check every 10 s in the foreground so an unlink on the partner's device shows
+  // up here too. Chained, so a slow response is never overlapped or discarded.
+  const partnerId = partner?.id ?? null;
+  useEffect(() => {
+    if (!session || !partnerId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      if (AppState.currentState === 'active') await fetchStatus().catch(console.error);
+      if (!cancelled) timer = setTimeout(poll, 10_000);
+    }
+    timer = setTimeout(poll, 10_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, partnerId]);
+
   async function generateInvite(): Promise<PartnerInviteDto> {
     const res = await api().request('/api/partner/invite', { method: 'POST' });
     if (!res.ok) throw new Error(`generateInvite failed: ${res.status}`);

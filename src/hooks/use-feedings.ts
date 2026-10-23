@@ -206,6 +206,9 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
   // after a newer upload would briefly revert or drop rows.
   const syncInFlightRef = useRef<Promise<void> | null>(null);
 
+  // Latest syncAndReload for the polling effects, so they don't restart on every render
+  const syncAndReloadRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     sessionRef.current = session;
     signOutRef.current = signOut;
@@ -253,20 +256,36 @@ export function useFeedings(hasPartner: boolean): UseFeedingsResult {
     return () => { cancelled = true; };
   }, [user]);
 
+  function syncAndReload() {
+    const db = dbRef.current;
+    const token = sessionRef.current;
+    if (!db || !token || !user) return;
+    sync(db, user.id.toString(), token)
+      .then(() => loadFeedings(db))
+      .then(setFeedings)
+      .catch(console.error);
+  }
+
+  useEffect(() => {
+    syncAndReloadRef.current = syncAndReload;
+  });
+
   // Poll every 5s when a partner is linked
   useEffect(() => {
     if (!hasPartner || !session) return;
-    const id = setInterval(() => {
-      const db = dbRef.current;
-      const token = sessionRef.current;
-      if (!db || !token || !user) return;
-      sync(db, user.id.toString(), token)
-        .then(() => loadFeedings(db))
-        .then(setFeedings)
-        .catch(console.error);
-    }, 5_000);
+    const id = setInterval(() => syncAndReloadRef.current(), 5_000);
     return () => clearInterval(id);
   }, [hasPartner, session, user]);
+
+  // Sync once as soon as the link changes: after an unlink the polling stops, and this sync's
+  // download no longer returns the partner's feedings, so they are purged from the list.
+  const prevHasPartnerRef = useRef(hasPartner);
+  useEffect(() => {
+    if (prevHasPartnerRef.current === hasPartner) return;
+    prevHasPartnerRef.current = hasPartner;
+    const id = setTimeout(() => syncAndReloadRef.current(), 0);
+    return () => clearTimeout(id);
+  }, [hasPartner]);
 
   async function reload() {
     const db = dbRef.current;
