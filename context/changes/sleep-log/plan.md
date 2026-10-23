@@ -587,13 +587,13 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [ ] 2.1 Backend tests pass: `cd backend && ./gradlew test`
-- [ ] 2.2 Backend starts in dev profile
+- [x] 2.1 Backend tests pass: `cd backend && ./gradlew test`
+- [x] 2.2 Backend starts in dev profile
 
 #### Manual
 
-- [ ] 2.3 PUT on a new uuid returns 201 with that id for sleeps and contractions; repeating returns 200 with no second row
-- [ ] 2.4 PUT ?create=false on a missing id returns 404; contraction strength 11 returns 400
+- [x] 2.3 PUT on a new uuid returns 201 with that id for sleeps and contractions; repeating returns 200 with no second row
+- [x] 2.4 PUT ?create=false on a missing id returns 404; contraction strength 11 returns 400
 
 ### Phase 3: Shared sync engine, feedings on it
 

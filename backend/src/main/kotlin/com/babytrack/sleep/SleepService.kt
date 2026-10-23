@@ -8,6 +8,8 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
+data class SleepUpsertResult(val sleep: Sleep, val created: Boolean)
+
 @Service
 class SleepService(
     private val sleepRepository: SleepRepository,
@@ -26,6 +28,8 @@ class SleepService(
         val user = userRepository.getReferenceById(userId)
         val sleep = Sleep(
             user = user,
+            // userId is a read-only mirror of user_id; set it so the returned DTO is correct before reload.
+            userId = userId,
             sleepType = sleepType,
             startedAt = startedAt,
             endedAt = endedAt,
@@ -60,6 +64,49 @@ class SleepService(
         sleep.durationMinutes = ChronoUnit.MINUTES.between(effectiveStartedAt, effectiveEndedAt).toInt()
         sleep.updatedAt = Instant.now()
         return sleepRepository.save(sleep)
+    }
+
+    /**
+     * Creates the sleep under the client-supplied [id], or fully replaces it if it exists.
+     * Unlike [update], a null [note] clears the stored value.
+     * With [allowCreate] false a missing [id] throws [SleepNotFoundException] instead of being created.
+     */
+    @Transactional
+    fun upsert(
+        id: UUID,
+        requesterId: UUID,
+        startedAt: Instant,
+        endedAt: Instant,
+        sleepType: SleepType,
+        note: String?,
+        allowCreate: Boolean = true,
+    ): SleepUpsertResult {
+        require(endedAt.isAfter(startedAt)) { "endedAt must be after startedAt" }
+        val durationMinutes = ChronoUnit.MINUTES.between(startedAt, endedAt).toInt()
+        // Atomic insert: overlapping PUTs for the same new id can't both create it, and a row that
+        // already exists always goes through the owner/partner check below.
+        // Partner edits pass allowCreate = false: a sleep deleted meanwhile must not come back as the editor's own.
+        if (allowCreate) {
+            val inserted = sleepRepository.insertIfAbsent(
+                id, requesterId, sleepType.name, startedAt, endedAt, durationMinutes, note, Instant.now(),
+            )
+            if (inserted == 1) {
+                return SleepUpsertResult(sleepRepository.findById(id).orElseThrow(), created = true)
+            }
+        }
+        val existing = sleepRepository.findById(id)
+            .orElseThrow { SleepNotFoundException("Sleep not found") }
+        val partnerId = partnerService.getPartnerId(requesterId)
+        if (existing.userId != requesterId && existing.userId != partnerId) {
+            throw SleepNotFoundException("Sleep not found")
+        }
+        existing.startedAt = startedAt
+        existing.endedAt = endedAt
+        existing.sleepType = sleepType
+        existing.note = note
+        existing.durationMinutes = durationMinutes
+        existing.updatedAt = Instant.now()
+        return SleepUpsertResult(sleepRepository.save(existing), created = false)
     }
 
     @Transactional(readOnly = true)

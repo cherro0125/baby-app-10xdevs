@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 import java.util.UUID
@@ -29,6 +31,13 @@ data class UpdateSleepRequest(
     val startedAt: Instant? = null,
     val endedAt: Instant? = null,
     val sleepType: SleepType? = null,
+    @field:Size(max = 2000) val note: String? = null,
+)
+
+data class UpsertSleepRequest(
+    @field:NotNull val startedAt: Instant,
+    @field:NotNull val endedAt: Instant,
+    @field:NotNull val sleepType: SleepType,
     @field:Size(max = 2000) val note: String? = null,
 )
 
@@ -90,6 +99,26 @@ class SleepController(private val sleepService: SleepService) {
             note = request.note,
         )
         return ResponseEntity.ok(sleep.toDto())
+    }
+
+    @PutMapping("/{id}")
+    fun upsert(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: UpsertSleepRequest,
+        @RequestParam(defaultValue = "true") create: Boolean,
+    ): ResponseEntity<SleepDto> {
+        val user = principal()
+        val result = sleepService.upsert(
+            id = id,
+            requesterId = user.id,
+            startedAt = request.startedAt,
+            endedAt = request.endedAt,
+            sleepType = request.sleepType,
+            note = request.note,
+            allowCreate = create,
+        )
+        val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(result.sleep.toDto())
     }
 
     @GetMapping
