@@ -139,7 +139,7 @@ All 12 Phase 3 manual rows were confirmed by the user on two devices (iPhone and
 - **Location**: backend/src/main/kotlin/com/babytrack/config/GlobalExceptionHandler.kt:97
 - **Detail**: `MethodArgumentTypeMismatchException` (a non-UUID id, or `create=foo`) falls through to the generic 500 handler. This was already true for PATCH and DELETE. The new 400 handler covers only body errors.
 - **Fix**: Add `MethodArgumentTypeMismatchException::class` to the existing 400 handler.
-- **Decision**: FIXED. `MethodArgumentTypeMismatchException` was added to `handleInvalidRequest` (400), and its detail text now covers path and query values too. `./gradlew test` green. The live curl check is still pending: the dev backend on :8080 must be restarted first.
+- **Decision**: DISMISSED (false positive), dead code removed. Live check on 2026-10-23: a non-UUID `{id}` and `?create=foo` already returned 400. `spring.mvc.problemdetails.enabled: true` registers Spring Boot's `ProblemDetailsExceptionHandler`, which takes precedence over our unordered `GlobalExceptionHandler`. Our `handleInvalidRequest` never ran; this also applies to the phase-1 F2 version. It was removed. After restarting the backend, curl returns 400 for: non-UUID id (PUT and DELETE), `create=foo`, missing `milkType`, malformed JSON, `amountMl` 0, and end before start. `./gradlew test` green.
 
 ### F10 — change.md Notes don't mention the two backend extras from the phase-1 review
 

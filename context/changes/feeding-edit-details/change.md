@@ -3,7 +3,7 @@ change_id: feeding-edit-details
 title: Edit milk type, amount and note of existing feedings
 status: impl_reviewed
 created: 2026-10-21
-updated: 2026-10-22
+updated: 2026-10-23
 archived_at: null
 ---
 
@@ -21,7 +21,7 @@ User report (manual testing of `language-switch`, 2026-10-21): "Jak edytuję akt
 - Phase 2 review (F2): own-feeding deletions now sync to the server via tombstones in `sync_queue` (`operation = 'DELETE'`, payload `{ feedingId }`); the next sync sends `DELETE /api/feedings/{id}` (404 counts as done) and the download skips tombstoned ids. This moves "syncing deletions of own feedings" out of the plan's "What We're NOT Doing" for feedings only — contractions keep the gap (their `DELETE` queue rows use payload `{ id, userId }` and are still never processed).
 - Phase 2 review (F3): `PUT /api/feedings/{id}` accepts `?create=false` (404 instead of creating); partner edits use it so a feeding the partner deleted meanwhile is not recreated as the editor's own. Own-feeding upload keeps the default `create=true`.
 - Phase 3 manual testing (2026-10-22) also needed two commits outside the plan: `b9c1ff3` changes the Android package to `com.dominik.babytrack` (the `com.babytrack.app` + debug SHA-1 pair was already registered in Google Cloud), and `dfb9db8` adds a shared `PartnerProvider` with refresh on foreground and while an invite is shown (the tabs kept stale partner state, so the feeding tab never started partner sync after linking) and fixes the clipped invite code on iOS.
-- Phase 1 review (F2, F3), backend extras: `GlobalExceptionHandler.handleInvalidRequest` turns malformed or invalid requests into 400 for every endpoint (body parse errors, `@Valid` failures, and since the full review also unparseable path/query values). `FeedingService.create()` sets the `userId` mirror so the POST response carries the requester.
+- Phase 1 review (F2, F3), backend extras: `FeedingService.create()` sets the `userId` mirror so the POST response carries the requester. The phase-1 `GlobalExceptionHandler.handleInvalidRequest` (400 for malformed/invalid requests) was removed after the full review. `spring.mvc.problemdetails.enabled: true` registers Spring Boot's `ProblemDetailsExceptionHandler`, which takes precedence over our unordered advice and already returns 400 for body parse errors, `@Valid` failures and unparseable path/query values. Checked live on 2026-10-23.
 - Full review (`reviews/impl-review.md`, 2026-10-22):
   - `buildEditTimes` puts each edited time on the day nearest its original (±12 h) and returns `'tooLong'` for 24 h or more (new key `feeding.edit.tooLong`). The midnight rule from the plan's Phase 3 is gone.
   - Sync purges own `synced = 1` rows the server no longer returns. With a full page of 200 it only purges inside that page's `startedAt` window.
