@@ -1,10 +1,10 @@
 ---
 change_id: feeding-edit-details
 title: Edit milk type, amount and note of existing feedings
-status: impl_reviewed
+status: archived
 created: 2026-10-21
 updated: 2026-10-23
-archived_at: null
+archived_at: 2026-10-23T10:49:51Z
 ---
 
 ## Notes
