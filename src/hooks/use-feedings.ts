@@ -3,18 +3,8 @@ import type { FeedingEdit } from '@/components/feeding-edit';
 import type { AppDatabase } from '@/db/schema';
 import type { LocalFeeding, MilkType } from '@/db/types';
 import type { EntitySyncConfig } from '@/sync/entity-sync';
+import { nowIso, uuid } from '@/sync/ids';
 import { useEntitySync } from '@/sync/use-entity-sync';
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function uuid(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
 
 const FEEDING_COLS = `
   id,

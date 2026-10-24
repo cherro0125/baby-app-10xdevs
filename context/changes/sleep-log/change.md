@@ -3,7 +3,7 @@ change_id: sleep-log
 title: Sleep log
 status: impl_reviewed
 created: 2026-09-14
-updated: 2026-10-23
+updated: 2026-10-24
 archived_at: null
 ---
 

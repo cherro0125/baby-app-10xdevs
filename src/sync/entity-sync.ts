@@ -3,6 +3,8 @@ import type { SQLiteBindValue } from 'expo-sqlite';
 import type { ApiClient } from '@/api/client';
 import type { AppDatabase } from '@/db/schema';
 
+import { nowIso, uuid } from './ids';
+
 type ServerRow = {
   id: string;
   userId: string;
@@ -34,17 +36,6 @@ export interface EntitySyncConfig<TServer extends ServerRow> {
 // Matches the backend's findTop200…OrderByStartedAtDesc for GET `${endpoint}/shared`.
 const SHARED_PAGE_SIZE = 200;
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function uuid(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
-
 function placeholders(count: number): string {
   return Array.from({ length: count }, () => '?').join(', ');
 }
@@ -55,6 +46,92 @@ function columnsOf(config: EntitySyncConfig<any>): string[] {
 
 function rowValues<T extends ServerRow>(config: EntitySyncConfig<T>, row: T, now: string): SQLiteBindValue[] {
   return [row.id, row.userId, ...(config.fromServer(row) as SQLiteBindValue[]), row.createdAt, now, 1];
+}
+
+/**
+ * Stores one downloaded shared page: partner and own rows, purges, then legacy-row resolution.
+ * Server rows are newest first (startedAt DESC).
+ */
+async function applyDownload<T extends ServerRow>(
+  db: SyncDb,
+  config: EntitySyncConfig<T>,
+  userId: string,
+  page: T[],
+): Promise<void> {
+  const { table } = config;
+  const tombstonePath = `$.${config.tombstoneKey}`;
+  // Only finished entries are synced. Legacy contraction uploads left server rows without an
+  // end (POST succeeded, PATCH failed); they must not show up as running.
+  const serverRows = page.filter((r) => r.endedAt != null);
+  const now = nowIso();
+  const columns = columnsOf(config);
+  const columnList = columns.join(', ');
+  const values = placeholders(columns.length);
+  const updateSet = [...config.dataColumns, 'created_at', 'updated_at']
+    .map((c) => `${c} = excluded.${c}`)
+    .join(', ');
+  for (const row of serverRows) {
+    if (row.userId !== userId) {
+      // Partner row: always take the server version (legacy partner rows already carry server ids)
+      await db.runAsync(
+        `INSERT OR REPLACE INTO ${table} (${columnList}) VALUES (${values})`,
+        rowValues(config, row, now),
+      );
+    } else {
+      // Own row: server wins unless a local edit is still waiting for upload (synced = 0), the
+      // row is a legacy one not yet matched (synced = 2), or it was deleted locally.
+      // One statement, so a concurrent edit or delete can't be overwritten.
+      await db.runAsync(
+        `INSERT INTO ${table} (${columnList})
+         SELECT ${values}
+         WHERE NOT EXISTS (
+           SELECT 1 FROM sync_queue
+           WHERE operation = 'DELETE' AND json_extract(payload, ?) = ?
+         )
+         ON CONFLICT(id) DO UPDATE SET ${updateSet}, synced = 1
+         WHERE ${table}.synced = 1`,
+        [...rowValues(config, row, now), tombstonePath, row.id],
+      );
+    }
+  }
+  // Purge stale partner rows not in the server response. Only downloaded rows (synced = 1):
+  // pending and legacy rows of another account that used this device must survive.
+  const partnerIds = serverRows.filter((r) => r.userId !== userId).map((r) => r.id);
+  const notInPartner = partnerIds.length > 0 ? `AND id NOT IN (${placeholders(partnerIds.length)})` : '';
+  await db.runAsync(`DELETE FROM ${table} WHERE user_id != ? AND synced = 1 ${notInPartner}`, [
+    userId,
+    ...partnerIds,
+  ]);
+  // Purge own rows deleted on the server (e.g. by the partner): a synced row missing from the
+  // response is gone there. Unsynced and legacy rows are kept. A full page only covers its
+  // startedAt window, so older rows are left alone. julianday() because server and local
+  // timestamps differ in fractional-second digits.
+  const ownRows = serverRows.filter((r) => r.userId === userId);
+  const ownIds = ownRows.map((r) => r.id);
+  // The server sorts by startedAt DESC, so the last row is the oldest.
+  const windowStart = page.length >= SHARED_PAGE_SIZE ? page[page.length - 1].startedAt : null;
+  const notInOwn = ownIds.length > 0 ? `AND id NOT IN (${placeholders(ownIds.length)})` : '';
+  await db.runAsync(
+    `DELETE FROM ${table} WHERE user_id = ? AND synced = 1 ${notInOwn}
+     AND (? IS NULL OR julianday(started_at) >= julianday(?))`,
+    [userId, ...ownIds, windowStart, windowStart],
+  );
+
+  // Legacy rows (synced = 2): stored under a local id while the server assigned its own.
+  // A server row with the same start is the same entry, just downloaded under its server id,
+  // so the local copy goes. Without a match the server lacks it: upload it under the local id.
+  // Rows older than a full page's window can't be matched yet, so they stay legacy.
+  const ownStarts = JSON.stringify(ownRows.map((r) => r.startedAt));
+  await db.runAsync(
+    `DELETE FROM ${table} WHERE user_id = ? AND synced = 2
+     AND EXISTS (SELECT 1 FROM json_each(?) WHERE julianday(value) = julianday(${table}.started_at))`,
+    [userId, ownStarts],
+  );
+  await db.runAsync(
+    `UPDATE ${table} SET synced = 0 WHERE user_id = ? AND synced = 2
+     AND (? IS NULL OR julianday(started_at) >= julianday(?))`,
+    [userId, windowStart, windowStart],
+  );
 }
 
 /**
@@ -96,70 +173,11 @@ export async function syncEntity<T extends ServerRow>(
     // Download: upsert the shared feed
     const res = await api.request(`${endpoint}/shared`);
     if (res.ok) {
-      const page = (await res.json()) as T[];
-      // Only finished entries are synced. Legacy contraction uploads left server rows without an
-      // end (POST succeeded, PATCH failed); they must not show up as running.
-      const serverRows = page.filter((r) => r.endedAt !== null);
-      const now = nowIso();
-      const columns = columnsOf(config);
-      const columnList = columns.join(', ');
-      const values = placeholders(columns.length);
-      const updateSet = [...config.dataColumns, 'created_at', 'updated_at']
-        .map((c) => `${c} = excluded.${c}`)
-        .join(', ');
-      for (const row of serverRows) {
-        if (row.userId !== userId) {
-          // Partner row: always take the server version (legacy partner rows already carry server ids)
-          await db.runAsync(
-            `INSERT OR REPLACE INTO ${table} (${columnList}) VALUES (${values})`,
-            rowValues(config, row, now),
-          );
-        } else {
-          // Own row: server wins unless a local edit is still waiting for upload (synced = 0), the
-          // row is a legacy one not yet matched (synced = 2), or it was deleted locally.
-          // One statement, so a concurrent edit or delete can't be overwritten.
-          await db.runAsync(
-            `INSERT INTO ${table} (${columnList})
-             SELECT ${values}
-             WHERE NOT EXISTS (
-               SELECT 1 FROM sync_queue
-               WHERE operation = 'DELETE' AND json_extract(payload, ?) = ?
-             )
-             ON CONFLICT(id) DO UPDATE SET ${updateSet}, synced = 1
-             WHERE ${table}.synced = 1`,
-            [...rowValues(config, row, now), tombstonePath, row.id],
-          );
-        }
+      try {
+        await applyDownload(db, config, userId, (await res.json()) as T[]);
+      } catch {
+        // malformed response or a failed write: pending rows are still uploaded below
       }
-      // Purge stale partner rows not in the server response
-      const partnerIds = serverRows.filter((r) => r.userId !== userId).map((r) => r.id);
-      const notInPartner = partnerIds.length > 0 ? `AND id NOT IN (${placeholders(partnerIds.length)})` : '';
-      await db.runAsync(`DELETE FROM ${table} WHERE user_id != ? ${notInPartner}`, [userId, ...partnerIds]);
-      // Purge own rows deleted on the server (e.g. by the partner): a synced row missing from the
-      // response is gone there. Unsynced and legacy rows are kept. A full page only covers its
-      // startedAt window, so older rows are left alone. julianday() because server and local
-      // timestamps differ in fractional-second digits.
-      const ownRows = serverRows.filter((r) => r.userId === userId);
-      const ownIds = ownRows.map((r) => r.id);
-      // The server sorts by startedAt DESC, so the last row is the oldest.
-      const windowStart = page.length >= SHARED_PAGE_SIZE ? page[page.length - 1].startedAt : null;
-      const notInOwn = ownIds.length > 0 ? `AND id NOT IN (${placeholders(ownIds.length)})` : '';
-      await db.runAsync(
-        `DELETE FROM ${table} WHERE user_id = ? AND synced = 1 ${notInOwn}
-         AND (? IS NULL OR julianday(started_at) >= julianday(?))`,
-        [userId, ...ownIds, windowStart, windowStart],
-      );
-
-      // Legacy rows (synced = 2): stored under a local id while the server assigned its own.
-      // A server row with the same start is the same entry, just downloaded under its server id,
-      // so the local copy goes. Without a match the server lacks it: upload it under the local id.
-      const ownStarts = JSON.stringify(ownRows.map((r) => r.startedAt));
-      await db.runAsync(
-        `DELETE FROM ${table} WHERE user_id = ? AND synced = 2
-         AND EXISTS (SELECT 1 FROM json_each(?) WHERE julianday(value) = julianday(${table}.started_at))`,
-        [userId, ownStarts],
-      );
-      await db.runAsync(`UPDATE ${table} SET synced = 0 WHERE user_id = ? AND synced = 2`, [userId]);
     }
 
     // Upload: PUT finished unsynced own rows under their local id (idempotent upsert)

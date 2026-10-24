@@ -554,6 +554,7 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 - **Local:**
   - `user_version` 1 → 2 marks synced contractions as legacy (`synced = 2`) and drops the legacy contraction queue rows. On the first successful sync, each legacy row is matched to the server by user + `started_at`: a match is replaced by the server copy, and no match re-uploads under the local id. Nothing is lost if the server lacks rows. A legacy row edited before its first sync is uploaded under its local id and may duplicate its server copy.
   - Own contractions deleted locally before the update reappear once and can be deleted again. Their deletions were never sent and the queue held only local ids.
+  - The same applies to a legacy (`synced = 2`) contraction deleted after the update but before its first successful sync. Its tombstone carries the local id, the server answers 404, and the server copy comes back once (impl-review-phase-3 F6).
   - Contractions already on the server keep their server-generated ids and get duplicates from earlier edits; those duplicates are not cleaned up.
 - **Old app builds** keep using `POST` / `PATCH`, which still work.
 
@@ -599,16 +600,16 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [x] 3.1 Jest passes, including the new engine tests: `npm test`
-- [x] 3.2 Type checking passes: `npx tsc --noEmit`
-- [x] 3.3 Lint passes with no new warnings: `npm run lint`
-- [x] 3.4 use-feedings.ts no longer contains its own sync loop
+- [x] 3.1 Jest passes, including the new engine tests: `npm test` — a1a6846
+- [x] 3.2 Type checking passes: `npx tsc --noEmit` — a1a6846
+- [x] 3.3 Lint passes with no new warnings: `npm run lint` — a1a6846
+- [x] 3.4 use-feedings.ts no longer contains its own sync loop — a1a6846
 
 #### Manual
 
-- [x] 3.5 Feeding regression on both phones: log, edit, delete own and partner's sync as one row within ~5 s
-- [x] 3.6 Partner deleting my feeding removes it on mine; offline partner edit shows the save error
-- [x] 3.7 Unlink/link still clears/brings the partner's feedings
+- [x] 3.5 Feeding regression on both phones: log, edit, delete own and partner's sync as one row within ~5 s — a1a6846
+- [x] 3.6 Partner deleting my feeding removes it on mine; offline partner edit shows the save error — a1a6846
+- [x] 3.7 Unlink/link still clears/brings the partner's feedings — a1a6846
 
 ### Phase 4: Contractions on the engine, with full edit
 

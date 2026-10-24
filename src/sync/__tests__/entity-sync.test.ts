@@ -247,6 +247,17 @@ describe('syncEntity download', () => {
     expect(await localIds()).toEqual(['p-new']);
   });
 
+  it('keeps pending and legacy rows of another account that used this device', async () => {
+    await insertLocal({ id: 'other-pending', user_id: '3', synced: 0 });
+    await insertLocal({ id: 'other-legacy', user_id: '3', synced: 2 });
+    await insertLocal({ id: 'other-synced', user_id: '3', synced: 1 });
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect(await localIds()).toEqual(['other-legacy', 'other-pending']);
+    expect(calls.filter((c) => c.method === 'PUT')).toEqual([]);
+  });
+
   it('purges own synced rows missing from the server only inside a full page window', async () => {
     const base = Date.parse('2026-10-01T00:00:00.000Z');
     const page = Array.from({ length: 200 }, (_, i) =>
@@ -323,6 +334,22 @@ describe('syncEntity legacy rows', () => {
     expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/api/feedings/legacy-alone']);
   });
 
+  it('keeps an unmatched legacy row older than a full page window', async () => {
+    const base = Date.parse('2026-10-01T00:00:00.000Z');
+    const page = Array.from({ length: 200 }, (_, i) =>
+      serverFeeding(`s-${String(i).padStart(3, '0')}`, PARTNER, new Date(base + (200 - i) * 3_600_000).toISOString()),
+    );
+    await insertLocal({ id: 'legacy-inside', synced: 2, started_at: new Date(base + 10 * 3_600_000 + 1).toISOString() });
+    await insertLocal({ id: 'legacy-outside', synced: 2, started_at: new Date(base - 3_600_000).toISOString() });
+    mockServer(sharedFeed(page));
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect((await local('legacy-inside'))?.synced).toBe(1);
+    expect((await local('legacy-outside'))?.synced).toBe(2);
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/api/feedings/legacy-inside']);
+  });
+
   it('leaves legacy rows untouched when the download fails', async () => {
     await insertLocal({ id: 'legacy', synced: 2 });
     mockServer(() => ({ status: 500 }));
@@ -331,6 +358,16 @@ describe('syncEntity legacy rows', () => {
 
     expect((await local('legacy'))?.synced).toBe(2);
     expect(calls.filter((c) => c.method === 'PUT')).toEqual([]);
+  });
+
+  it('still uploads when the download body is malformed', async () => {
+    await insertLocal({ id: 'f1', synced: 0 });
+    mockServer((call) => (call.method === 'GET' ? { status: 200, json: { not: 'an array' } } : undefined));
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/api/feedings/f1']);
+    expect((await local('f1'))?.synced).toBe(1);
   });
 
   it('never throws', async () => {

@@ -134,8 +134,8 @@ export function useEntitySync<TLocal extends { id: string; userId: string; ended
     try {
       await editPartnerEntry(db, config, api, id, body);
     } finally {
-      // Also after a 404, so the dropped row disappears at once
-      await reload();
+      // Also after a 404, so the dropped row disappears at once; a reload error must not mask the edit's
+      await reload().catch(console.error);
     }
   }
 
