@@ -599,16 +599,16 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [ ] 3.1 Jest passes, including the new engine tests: `npm test`
-- [ ] 3.2 Type checking passes: `npx tsc --noEmit`
-- [ ] 3.3 Lint passes with no new warnings: `npm run lint`
-- [ ] 3.4 use-feedings.ts no longer contains its own sync loop
+- [x] 3.1 Jest passes, including the new engine tests: `npm test`
+- [x] 3.2 Type checking passes: `npx tsc --noEmit`
+- [x] 3.3 Lint passes with no new warnings: `npm run lint`
+- [x] 3.4 use-feedings.ts no longer contains its own sync loop
 
 #### Manual
 
-- [ ] 3.5 Feeding regression on both phones: log, edit, delete own and partner's sync as one row within ~5 s
-- [ ] 3.6 Partner deleting my feeding removes it on mine; offline partner edit shows the save error
-- [ ] 3.7 Unlink/link still clears/brings the partner's feedings
+- [x] 3.5 Feeding regression on both phones: log, edit, delete own and partner's sync as one row within ~5 s
+- [x] 3.6 Partner deleting my feeding removes it on mine; offline partner edit shows the save error
+- [x] 3.7 Unlink/link still clears/brings the partner's feedings
 
 ### Phase 4: Contractions on the engine, with full edit
 
