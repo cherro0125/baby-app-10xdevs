@@ -35,7 +35,6 @@ export default {
     endNow: 'End now',
   },
   timeEdit: {
-    title: 'Edit times',
     stopFirst: '(stop first to edit)',
     endAfterStart: 'End must be after start',
   },
@@ -49,6 +48,9 @@ export default {
       none: 'No contractions yet',
       recording: 'Contractions recorded — keep timing',
       goNow: 'Pattern detected — may be time to go to the hospital',
+    },
+    edit: {
+      title: 'Edit contraction',
     },
     incomplete: {
       title: 'Contraction in progress',

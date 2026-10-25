@@ -1,4 +1,4 @@
-import { buildEditTimes, parseAmountMl } from '@/components/feeding-edit';
+import { buildEditTimes, parseAmountMl } from '@/components/entry-edit';
 
 describe('parseAmountMl', () => {
   it.each([
@@ -73,5 +73,26 @@ describe('buildEditTimes', () => {
     const feeding = { startedAt: at(21, 10, 0).toISOString(), endedAt: at(21, 10, 20).toISOString() };
 
     expect(buildEditTimes(feeding, { h: 10, m: 0 }, { h: 10, m: 0 })).toBe('endBeforeStart');
+  });
+
+  it('keeps untouched times exact, including their seconds', () => {
+    const startedAt = new Date(2026, 9, 21, 10, 0, 12, 345);
+    const endedAt = new Date(2026, 9, 21, 10, 0, 57, 890);
+    const entry = { startedAt: startedAt.toISOString(), endedAt: endedAt.toISOString() };
+
+    expect(buildEditTimes(entry, { h: 10, m: 0 }, { h: 10, m: 0 })).toEqual({ startedAt, endedAt });
+  });
+
+  it('keeps the start exact when only the end changes', () => {
+    const startedAt = new Date(2026, 9, 21, 10, 0, 12, 345);
+    const entry = {
+      startedAt: startedAt.toISOString(),
+      endedAt: new Date(2026, 9, 21, 10, 1, 5, 0).toISOString(),
+    };
+
+    expect(buildEditTimes(entry, { h: 10, m: 0 }, { h: 10, m: 2 })).toEqual({
+      startedAt,
+      endedAt: at(21, 10, 2),
+    });
   });
 });

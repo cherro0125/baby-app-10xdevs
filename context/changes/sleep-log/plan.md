@@ -615,18 +615,18 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [ ] 4.1 Jest passes, including key parity, the hardcoded-string guard and the new time cases: `npm test`
-- [ ] 4.2 Type checking passes: `npx tsc --noEmit`
-- [ ] 4.3 Lint passes with no new warnings: `npm run lint`
-- [ ] 4.4 Old pieces are gone: time-edit-sheet.tsx and enqueueSync
+- [x] 4.1 Jest passes, including key parity, the hardcoded-string guard and the new time cases: `npm test`
+- [x] 4.2 Type checking passes: `npx tsc --noEmit`
+- [x] 4.3 Lint passes with no new warnings: `npm run lint`
+- [x] 4.4 Old pieces are gone: time-edit-sheet.tsx and enqueueSync
 
 #### Manual
 
-- [ ] 4.5 After reload each contraction appears once and the server count does not grow
-- [ ] 4.6 Strength and note of a new contraction appear on the partner's device within ~5 s
-- [ ] 4.7 Editing only strength or note keeps the duration; full edit updates both devices as one row
-- [ ] 4.8 Deleting my contraction removes it on the partner's device and after reload; 5-1-1 banner unchanged
-- [ ] 4.9 Tapping the running contraction shows the "stop first" sheet
+- [x] 4.5 After reload each contraction appears once and the server count does not grow
+- [x] 4.6 Strength and note of a new contraction appear on the partner's device within ~5 s
+- [x] 4.7 Editing only strength or note keeps the duration; full edit updates both devices as one row
+- [x] 4.8 Deleting my contraction removes it on the partner's device and after reload; 5-1-1 banner unchanged
+- [x] 4.9 Tapping the running contraction shows the "stop first" sheet
 
 ### Phase 5: Sleep — data and UI
 

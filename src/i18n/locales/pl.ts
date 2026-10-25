@@ -37,7 +37,6 @@ const pl: TranslationShape = {
     endNow: 'Zakończ teraz',
   },
   timeEdit: {
-    title: 'Edytuj czasy',
     stopFirst: '(najpierw zatrzymaj, aby edytować)',
     endAfterStart: 'Koniec musi być później niż początek',
   },
@@ -51,6 +50,9 @@ const pl: TranslationShape = {
       none: 'Brak skurczów',
       recording: 'Skurcze zarejestrowane — mierz dalej',
       goNow: 'Wykryto wzorzec — może być czas jechać do szpitala',
+    },
+    edit: {
+      title: 'Edytuj skurcz',
     },
     incomplete: {
       title: 'Skurcz w toku',

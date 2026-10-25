@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } fr
 import { useTranslation } from 'react-i18next';
 
 import { FeedingDetailsFields } from '@/components/feeding-details-fields';
-import { parseAmountMl } from '@/components/feeding-edit';
+import { parseAmountMl } from '@/components/entry-edit';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';

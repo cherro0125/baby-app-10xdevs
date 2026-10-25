@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/auth/session-provider';
 
 import { FeedingCompletionSheet } from '@/components/feeding-completion-sheet';
-import type { FeedingEdit } from '@/components/feeding-edit';
+import type { FeedingEdit } from '@/components/entry-edit';
 import { FeedingEditSheet } from '@/components/feeding-edit-sheet';
 import { FeedingList } from '@/components/feeding-list';
 import { FeedingTimer } from '@/components/feeding-timer';

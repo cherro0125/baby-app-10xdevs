@@ -1,5 +1,5 @@
 import { useSession } from '@/auth/session-provider';
-import type { FeedingEdit } from '@/components/feeding-edit';
+import type { FeedingEdit } from '@/components/entry-edit';
 import type { AppDatabase } from '@/db/schema';
 import type { LocalFeeding, MilkType } from '@/db/types';
 import type { EntitySyncConfig } from '@/sync/entity-sync';

@@ -9,6 +9,14 @@ export interface FeedingEdit {
   note: string | null; // null = no note
 }
 
+/** Full replacement of a completed contraction's editable fields. */
+export interface ContractionEdit {
+  startedAt: Date;
+  endedAt: Date;
+  strength: number | null; // null = no strength
+  note: string | null; // null = no note
+}
+
 // Far above any real feeding; also keeps the value inside the backend's Int amountMl.
 const MAX_AMOUNT_ML = 10_000;
 
@@ -29,8 +37,12 @@ interface ClockTime {
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
-/** The given clock time on whichever day keeps it closest (within 12 h) to the original timestamp. */
+/**
+ * The given clock time on whichever day keeps it closest (within 12 h) to the original timestamp.
+ * An unchanged hour and minute return the original instant, so untouched seconds are kept.
+ */
 function nearestTo(original: Date, time: ClockTime): Date {
+  if (time.h === original.getHours() && time.m === original.getMinutes()) return new Date(original);
   const result = new Date(original);
   result.setHours(time.h, time.m, 0, 0);
   const diff = result.getTime() - original.getTime();
@@ -40,17 +52,17 @@ function nearestTo(original: Date, time: ClockTime): Date {
 }
 
 /**
- * Applies edited hours/minutes to the feeding, each time staying on the day nearest its original
+ * Applies edited hours/minutes to a completed entry, each time staying on the day nearest its original
  * value, so corrections around midnight move by minutes, not by a day.
  * Returns 'endBeforeStart' when the end is not after the start, 'tooLong' for 24 h or more.
  */
 export function buildEditTimes(
-  feeding: { startedAt: string; endedAt: string },
+  entry: { startedAt: string; endedAt: string },
   start: ClockTime,
   end: ClockTime,
 ): { startedAt: Date; endedAt: Date } | 'endBeforeStart' | 'tooLong' {
-  const startedAt = nearestTo(new Date(feeding.startedAt), start);
-  const endedAt = nearestTo(new Date(feeding.endedAt), end);
+  const startedAt = nearestTo(new Date(entry.startedAt), start);
+  const endedAt = nearestTo(new Date(entry.endedAt), end);
   if (endedAt <= startedAt) return 'endBeforeStart';
   if (endedAt.getTime() - startedAt.getTime() >= DAY_MS) return 'tooLong';
   return { startedAt, endedAt };

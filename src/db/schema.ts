@@ -64,4 +64,16 @@ async function migrate(db: AppDatabase): Promise<void> {
       await db.execAsync('DELETE FROM feedings WHERE synced = 1; PRAGMA user_version = 1;');
     });
   }
+  if (version < 2) {
+    // v2: contractions had the same local-vs-server id split. Not deleted (some may exist only
+    // on this phone): synced = 2 marks them for matching against the server on the next sync.
+    // The legacy CREATE/FINALIZE/DELETE contraction queue rows were never processed; drop them.
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        UPDATE contractions SET synced = 2 WHERE synced = 1;
+        DELETE FROM sync_queue WHERE json_extract(payload, '$.feedingId') IS NULL;
+        PRAGMA user_version = 2;
+      `);
+    });
+  }
 }
