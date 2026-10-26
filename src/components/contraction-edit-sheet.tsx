@@ -40,7 +40,7 @@ export function ContractionEditSheet({ contraction, onClose, onSave }: Contracti
 
 const ERROR_KEYS = {
   endBeforeStart: 'timeEdit.endAfterStart',
-  tooLong: 'feeding.edit.tooLong',
+  tooLong: 'contractions.edit.tooLong',
   saveFailed: 'feeding.edit.saveFailed',
 } as const;
 

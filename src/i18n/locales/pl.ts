@@ -53,6 +53,7 @@ const pl: TranslationShape = {
     },
     edit: {
       title: 'Edytuj skurcz',
+      tooLong: 'Skurcz nie może trwać 24 godzin lub dłużej',
     },
     incomplete: {
       title: 'Skurcz w toku',

@@ -247,15 +247,26 @@ describe('syncEntity download', () => {
     expect(await localIds()).toEqual(['p-new']);
   });
 
-  it('keeps pending and legacy rows of another account that used this device', async () => {
+  it('keeps pending rows of another account that used this device', async () => {
     await insertLocal({ id: 'other-pending', user_id: '3', synced: 0 });
-    await insertLocal({ id: 'other-legacy', user_id: '3', synced: 2 });
     await insertLocal({ id: 'other-synced', user_id: '3', synced: 1 });
 
     await syncEntity(db, CONFIG, ME, api);
 
-    expect(await localIds()).toEqual(['other-legacy', 'other-pending']);
+    expect(await localIds()).toEqual(['other-pending']);
     expect(calls.filter((c) => c.method === 'PUT')).toEqual([]);
+  });
+
+  it('purges legacy partner rows missing from the server, including ones without an end', async () => {
+    await insertLocal({ id: 'p-legacy', user_id: PARTNER, synced: 2 });
+    await insertLocal({ id: 'p-open', user_id: PARTNER, synced: 2, ended_at: null });
+    await insertLocal({ id: 'p-kept', user_id: PARTNER, synced: 2, note: 'old' });
+    mockServer(sharedFeed([serverFeeding('p-kept', PARTNER, '2026-10-20T10:00:00.000Z', { note: 'server' })]));
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect(await localIds()).toEqual(['p-kept']);
+    expect(await local('p-kept')).toMatchObject({ note: 'server', synced: 1 });
   });
 
   it('purges own synced rows missing from the server only inside a full page window', async () => {
@@ -334,6 +345,28 @@ describe('syncEntity legacy rows', () => {
     expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/api/feedings/legacy-alone']);
   });
 
+  it('keeps the server copy when the device holds both the local and the server-id copy', async () => {
+    await insertLocal({ id: 'legacy-local', synced: 2, started_at: '2026-10-20T10:00:00.000Z' });
+    await insertLocal({ id: 'server-id', synced: 2, started_at: '2026-10-20T10:00:00.000Z', note: 'old' });
+    mockServer(sharedFeed([serverFeeding('server-id', ME, '2026-10-20T10:00:00.000Z', { note: 'server' })]));
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect(await localIds()).toEqual(['server-id']);
+    expect(await local('server-id')).toMatchObject({ note: 'server', synced: 1 });
+    expect(calls.filter((c) => c.method === 'PUT')).toEqual([]);
+  });
+
+  it('uploads only one of two legacy copies the server lacks', async () => {
+    await insertLocal({ id: 'legacy-a', synced: 2, started_at: '2026-10-20T10:00:00.000Z' });
+    await insertLocal({ id: 'legacy-b', synced: 2, started_at: '2026-10-20T10:00:00.000Z' });
+
+    await syncEntity(db, CONFIG, ME, api);
+
+    expect(await localIds()).toEqual(['legacy-a']);
+    expect(calls.filter((c) => c.method === 'PUT').map((c) => c.path)).toEqual(['/api/feedings/legacy-a']);
+  });
+
   it('keeps an unmatched legacy row older than a full page window', async () => {
     const base = Date.parse('2026-10-01T00:00:00.000Z');
     const page = Array.from({ length: 200 }, (_, i) =>
@@ -403,6 +436,15 @@ describe('deleteEntry', () => {
     mockServer(() => ({ status: 204 }));
     await deleteEntry(db, CONFIG, api, 'p1', ME);
     expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(['DELETE /api/feedings/p1']);
+    expect(await local('p1')).toBeNull();
+  });
+
+  it('deletes a partner row locally when the server no longer has it', async () => {
+    await insertLocal({ id: 'p1', user_id: PARTNER });
+    mockServer(() => ({ status: 404 }));
+
+    await deleteEntry(db, CONFIG, api, 'p1', ME);
+
     expect(await local('p1')).toBeNull();
   });
 });

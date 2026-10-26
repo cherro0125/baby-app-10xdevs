@@ -78,9 +78,10 @@ async function applyDownload<T extends ServerRow>(
         rowValues(config, row, now),
       );
     } else {
-      // Own row: server wins unless a local edit is still waiting for upload (synced = 0), the
-      // row is a legacy one not yet matched (synced = 2), or it was deleted locally.
-      // One statement, so a concurrent edit or delete can't be overwritten.
+      // Own row: server wins unless a local edit is still waiting for upload (synced = 0) or it
+      // was deleted locally. A legacy row (synced = 2) stored under this server id is the server
+      // copy itself, so it is resolved here. One statement, so a concurrent edit or delete can't
+      // be overwritten.
       await db.runAsync(
         `INSERT INTO ${table} (${columnList})
          SELECT ${values}
@@ -89,16 +90,17 @@ async function applyDownload<T extends ServerRow>(
            WHERE operation = 'DELETE' AND json_extract(payload, ?) = ?
          )
          ON CONFLICT(id) DO UPDATE SET ${updateSet}, synced = 1
-         WHERE ${table}.synced = 1`,
+         WHERE ${table}.synced IN (1, 2)`,
         [...rowValues(config, row, now), tombstonePath, row.id],
       );
     }
   }
-  // Purge stale partner rows not in the server response. Only downloaded rows (synced = 1):
-  // pending and legacy rows of another account that used this device must survive.
+  // Purge stale partner rows not in the server response. Only downloaded (synced = 1) and legacy
+  // (synced = 2, already on the server before the v2 migration) rows: pending rows of another
+  // account that used this device must survive.
   const partnerIds = serverRows.filter((r) => r.userId !== userId).map((r) => r.id);
   const notInPartner = partnerIds.length > 0 ? `AND id NOT IN (${placeholders(partnerIds.length)})` : '';
-  await db.runAsync(`DELETE FROM ${table} WHERE user_id != ? AND synced = 1 ${notInPartner}`, [
+  await db.runAsync(`DELETE FROM ${table} WHERE user_id != ? AND synced IN (1, 2) ${notInPartner}`, [
     userId,
     ...partnerIds,
   ]);
@@ -126,6 +128,17 @@ async function applyDownload<T extends ServerRow>(
     `DELETE FROM ${table} WHERE user_id = ? AND synced = 2
      AND EXISTS (SELECT 1 FROM json_each(?) WHERE julianday(value) = julianday(${table}.started_at))`,
     [userId, ownStarts],
+  );
+  // The old download also stored a copy under the server id next to the local one; if the
+  // server lost both, upload only one of them.
+  await db.runAsync(
+    `DELETE FROM ${table} WHERE user_id = ? AND synced = 2
+     AND EXISTS (
+       SELECT 1 FROM ${table} AS twin
+       WHERE twin.user_id = ${table}.user_id AND twin.synced = 2 AND twin.id < ${table}.id
+         AND julianday(twin.started_at) = julianday(${table}.started_at)
+     )`,
+    [userId],
   );
   await db.runAsync(
     `UPDATE ${table} SET synced = 0 WHERE user_id = ? AND synced = 2
@@ -209,7 +222,8 @@ export async function syncEntity<T extends ServerRow>(
 
 /**
  * Own row: tombstone plus local delete, so a sync running in between can't re-download it; the next
- * sync sends the deletion (works offline). Partner row: deleted online; throws on failure.
+ * sync sends the deletion (works offline). Partner row: deleted online; throws on failure, except
+ * 404 (already gone).
  */
 export async function deleteEntry<T extends ServerRow>(
   db: SyncDb,
@@ -233,7 +247,10 @@ export async function deleteEntry<T extends ServerRow>(
     });
   } else {
     const res = await api.request(`${config.endpoint}/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(`Failed to delete partner entry in ${table}: ${res.status}`);
+    // 404: already gone on the server, so only the stale local copy is left to delete
+    if (!res.ok && res.status !== 404) {
+      throw new Error(`Failed to delete partner entry in ${table}: ${res.status}`);
+    }
     await db.runAsync(`DELETE FROM ${table} WHERE id = ?`, [id]);
   }
 }

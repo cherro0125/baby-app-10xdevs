@@ -51,6 +51,7 @@ export default {
     },
     edit: {
       title: 'Edit contraction',
+      tooLong: "A contraction can't last 24 hours or more",
     },
     incomplete: {
       title: 'Contraction in progress',

@@ -124,11 +124,11 @@ Backend first (Phase 2), so the client can rely on `PUT` for sleeps and contract
 
 - **Sync order and invariants**, moved verbatim from `use-feedings.ts`:
   1. Tombstones of the current user go first: `DELETE`; OK or 404 clears the tombstone.
-  2. Download: server rows with a null end are ignored. Contractions can have legacy orphans where the POST succeeded and the PATCH failed, and they must not show up as running. Partner rows `INSERT OR REPLACE`. Own rows use one conditional upsert that skips `synced = 0` and tombstoned ids. Then the partner purge, then the own-synced purge windowed by the oldest `startedAt` when the page is full.
-  3. Legacy rows: after a successful download, for each own `synced = 2` row, if the server returned a row of the same user with the same `started_at` (`julianday` equality), delete the local row, because the server copy was just downloaded. Otherwise set `synced = 0`.
+  2. Download: server rows with a null end are ignored. Contractions can have legacy orphans where the POST succeeded and the PATCH failed, and they must not show up as running. Partner rows `INSERT OR REPLACE`. Own rows use one conditional upsert that skips `synced = 0` and tombstoned ids; an own `synced = 2` row stored under the server id is the server copy and becomes `synced = 1` (impl-review-phase-4 F1). Then the partner purge (`synced IN (1, 2)`; a legacy partner row was on the server before v2, impl-review-phase-4 F2), then the own-synced purge windowed by the oldest `startedAt` when the page is full.
+  3. Legacy rows: after a successful download, for each own `synced = 2` row, if the server returned a row of the same user with the same `started_at` (`julianday` equality), delete the local row, because the server copy was just downloaded. Of own `synced = 2` rows sharing a start (the old download kept a local and a server-id copy), keep one. Otherwise set `synced = 0`.
   4. Upload: finished own `synced = 0` rows via `PUT` with the default `create=true`. Mark synced only `WHERE updated_at = ?`.
 
-  `synced = 2` rows are never overwritten by the download, never purged and never uploaded until step 3 resolves them.
+  Own `synced = 2` rows are never purged and never uploaded until step 3 resolves them; the download overwrites one only when its id is the server id.
 
   The in-flight guard makes overlapping callers join the running sync. Timestamps are compared with `julianday()`.
 - **Untouched times stay exact.** `buildEditTimes` must return the original instant for a time whose hour and minute were not changed. Otherwise editing a contraction's strength rounds its seconds away. This also changes feedings: an untouched time keeps its seconds.
@@ -615,18 +615,18 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [x] 4.1 Jest passes, including key parity, the hardcoded-string guard and the new time cases: `npm test`
-- [x] 4.2 Type checking passes: `npx tsc --noEmit`
-- [x] 4.3 Lint passes with no new warnings: `npm run lint`
-- [x] 4.4 Old pieces are gone: time-edit-sheet.tsx and enqueueSync
+- [x] 4.1 Jest passes, including key parity, the hardcoded-string guard and the new time cases: `npm test` — 0109090
+- [x] 4.2 Type checking passes: `npx tsc --noEmit` — 0109090
+- [x] 4.3 Lint passes with no new warnings: `npm run lint` — 0109090
+- [x] 4.4 Old pieces are gone: time-edit-sheet.tsx and enqueueSync — 0109090
 
 #### Manual
 
-- [x] 4.5 After reload each contraction appears once and the server count does not grow
-- [x] 4.6 Strength and note of a new contraction appear on the partner's device within ~5 s
-- [x] 4.7 Editing only strength or note keeps the duration; full edit updates both devices as one row
-- [x] 4.8 Deleting my contraction removes it on the partner's device and after reload; 5-1-1 banner unchanged
-- [x] 4.9 Tapping the running contraction shows the "stop first" sheet
+- [x] 4.5 After reload each contraction appears once and the server count does not grow — 0109090
+- [x] 4.6 Strength and note of a new contraction appear on the partner's device within ~5 s — 0109090
+- [x] 4.7 Editing only strength or note keeps the duration; full edit updates both devices as one row — 0109090
+- [x] 4.8 Deleting my contraction removes it on the partner's device and after reload; 5-1-1 banner unchanged — 0109090
+- [x] 4.9 Tapping the running contraction shows the "stop first" sheet — 0109090
 
 ### Phase 5: Sleep — data and UI
 
