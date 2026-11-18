@@ -46,6 +46,19 @@ async function migrate(db: AppDatabase): Promise<void> {
       synced INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS sleeps (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      sleep_type TEXT,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      duration_minutes INTEGER,
+      note TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      synced INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id TEXT PRIMARY KEY,
       operation TEXT NOT NULL,
@@ -62,6 +75,18 @@ async function migrate(db: AppDatabase): Promise<void> {
     // Drop synced rows so the next sync re-downloads them under their server ids.
     await db.withTransactionAsync(async () => {
       await db.execAsync('DELETE FROM feedings WHERE synced = 1; PRAGMA user_version = 1;');
+    });
+  }
+  if (version < 2) {
+    // v2: contractions had the same local-vs-server id split. Not deleted (some may exist only
+    // on this phone): synced = 2 marks them for matching against the server on the next sync.
+    // The legacy CREATE/FINALIZE/DELETE contraction queue rows were never processed; drop them.
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        UPDATE contractions SET synced = 2 WHERE synced = 1;
+        DELETE FROM sync_queue WHERE json_extract(payload, '$.feedingId') IS NULL;
+        PRAGMA user_version = 2;
+      `);
     });
   }
 }

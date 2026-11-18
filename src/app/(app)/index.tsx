@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 
 import { useSession } from '@/auth/session-provider';
 
+import { ContractionEditSheet } from '@/components/contraction-edit-sheet';
 import { ContractionList } from '@/components/contraction-list';
 import { ContractionTimer } from '@/components/contraction-timer';
+import type { ContractionEdit } from '@/components/entry-edit';
 import { FiveOneOneBanner } from '@/components/five-one-one-banner';
 import { IncompleteContractionModal } from '@/components/incomplete-contraction-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { TimeEditSheet } from '@/components/time-edit-sheet';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import type { LocalContraction } from '@/db/types';
 import { useContractions } from '@/hooks/use-contractions';
@@ -73,15 +74,14 @@ export default function ContractionsScreen() {
     }
   }
 
-  async function handleEditConfirm(
-    id: string,
-    patch: { startedAt?: Date; endedAt?: Date },
-  ) {
+  async function handleEditSave(id: string, changes: ContractionEdit) {
     try {
-      await edit(id, patch);
+      await edit(id, changes);
       setEditTarget(null);
     } catch (e) {
       console.error('[ContractionsScreen] edit failed', e);
+      // Rethrown so the sheet stays open and shows the error.
+      throw e;
     }
   }
 
@@ -92,10 +92,10 @@ export default function ContractionsScreen() {
         onContinue={() => setModalDismissed(true)}
         onEndNow={handleEndNow}
       />
-      <TimeEditSheet
+      <ContractionEditSheet
         contraction={editTarget}
         onClose={() => setEditTarget(null)}
-        onConfirm={handleEditConfirm}
+        onSave={handleEditSave}
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.container}>

@@ -29,6 +29,10 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="sleep-log">
+        <NativeTabs.Trigger.Label>{t('tabs.sleep')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'moon', selected: 'moon.fill' }} md="bedtime" />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="partner">
         <NativeTabs.Trigger.Label>{t('tabs.partner')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

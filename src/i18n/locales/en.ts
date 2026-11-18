@@ -11,6 +11,7 @@ export default {
   tabs: {
     contractions: 'Contractions',
     feeding: 'Feeding',
+    sleep: 'Sleep',
     partner: 'Partner',
     settings: 'Settings',
   },
@@ -35,7 +36,6 @@ export default {
     endNow: 'End now',
   },
   timeEdit: {
-    title: 'Edit times',
     stopFirst: '(stop first to edit)',
     endAfterStart: 'End must be after start',
   },
@@ -49,6 +49,10 @@ export default {
       none: 'No contractions yet',
       recording: 'Contractions recorded — keep timing',
       goNow: 'Pattern detected — may be time to go to the hospital',
+    },
+    edit: {
+      title: 'Edit contraction',
+      tooLong: "A contraction can't last 24 hours or more",
     },
     incomplete: {
       title: 'Contraction in progress',
@@ -81,6 +85,29 @@ export default {
     incomplete: {
       title: 'Feeding in progress',
       body: 'It looks like a feeding was left running. What would you like to do?',
+    },
+  },
+  sleep: {
+    startButton: 'Start Sleep',
+    empty: 'No sleep sessions logged yet',
+    details: 'Sleep details',
+    type: {
+      nap: 'Nap',
+      night: 'Night',
+      other: 'Other',
+    },
+    typeShort: {
+      nap: 'NAP',
+      night: 'NGT',
+      other: 'OTH',
+    },
+    edit: {
+      title: 'Edit sleep',
+      tooLong: "A sleep can't last 24 hours or more",
+    },
+    incomplete: {
+      title: 'Sleep in progress',
+      body: 'It looks like a sleep was left running. What would you like to do?',
     },
   },
   partner: {

@@ -13,6 +13,7 @@ const pl: TranslationShape = {
   tabs: {
     contractions: 'Skurcze',
     feeding: 'Karmienie',
+    sleep: 'Sen',
     partner: 'Partner',
     settings: 'Ustawienia',
   },
@@ -37,7 +38,6 @@ const pl: TranslationShape = {
     endNow: 'Zakończ teraz',
   },
   timeEdit: {
-    title: 'Edytuj czasy',
     stopFirst: '(najpierw zatrzymaj, aby edytować)',
     endAfterStart: 'Koniec musi być później niż początek',
   },
@@ -51,6 +51,10 @@ const pl: TranslationShape = {
       none: 'Brak skurczów',
       recording: 'Skurcze zarejestrowane — mierz dalej',
       goNow: 'Wykryto wzorzec — może być czas jechać do szpitala',
+    },
+    edit: {
+      title: 'Edytuj skurcz',
+      tooLong: 'Skurcz nie może trwać 24 godzin lub dłużej',
     },
     incomplete: {
       title: 'Skurcz w toku',
@@ -83,6 +87,29 @@ const pl: TranslationShape = {
     incomplete: {
       title: 'Karmienie w toku',
       body: 'Wygląda na to, że pomiar karmienia nie został zatrzymany. Co chcesz zrobić?',
+    },
+  },
+  sleep: {
+    startButton: 'Rozpocznij sen',
+    empty: 'Nie zapisano jeszcze snu',
+    details: 'Szczegóły snu',
+    type: {
+      nap: 'Drzemka',
+      night: 'Noc',
+      other: 'Inne',
+    },
+    typeShort: {
+      nap: 'DRZ',
+      night: 'NOC',
+      other: 'INN',
+    },
+    edit: {
+      title: 'Edytuj sen',
+      tooLong: 'Sen nie może trwać 24 godzin lub dłużej',
+    },
+    incomplete: {
+      title: 'Sen w toku',
+      body: 'Wygląda na to, że pomiar snu nie został zatrzymany. Co chcesz zrobić?',
     },
   },
   partner: {

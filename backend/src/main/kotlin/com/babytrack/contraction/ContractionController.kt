@@ -2,7 +2,10 @@ package com.babytrack.contraction
 
 import com.babytrack.auth.AuthenticatedUser
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
@@ -11,14 +14,23 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 import java.util.UUID
 
 data class StartContractionRequest(@field:NotNull val startedAt: Instant)
 data class UpdateContractionRequest(val startedAt: Instant?, @field:NotNull val endedAt: Instant)
+
+data class UpsertContractionRequest(
+    @field:NotNull val startedAt: Instant,
+    @field:NotNull val endedAt: Instant,
+    @field:Min(1) @field:Max(10) val strength: Int? = null,
+    @field:Size(max = 2000) val note: String? = null,
+)
 
 data class ContractionDto(
     val id: UUID,
@@ -65,6 +77,26 @@ class ContractionController(private val contractionService: ContractionService) 
         val user = principal()
         val contraction = contractionService.update(id, user.id, request.startedAt, request.endedAt)
         return ResponseEntity.ok(contraction.toDto())
+    }
+
+    @PutMapping("/{id}")
+    fun upsert(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: UpsertContractionRequest,
+        @RequestParam(defaultValue = "true") create: Boolean,
+    ): ResponseEntity<ContractionDto> {
+        val user = principal()
+        val result = contractionService.upsert(
+            id = id,
+            requesterId = user.id,
+            startedAt = request.startedAt,
+            endedAt = request.endedAt,
+            strength = request.strength,
+            note = request.note,
+            allowCreate = create,
+        )
+        val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(result.contraction.toDto())
     }
 
     @GetMapping
