@@ -632,15 +632,15 @@ Three entities now sync every 5 s while a partner is linked. Each sync writes up
 
 #### Automated
 
-- [x] 5.1 Jest passes, including key parity and the hardcoded-string guard: `npm test`
-- [x] 5.2 Type checking passes: `npx tsc --noEmit`
-- [x] 5.3 Lint passes with no new warnings: `npm run lint`
+- [x] 5.1 Jest passes, including key parity and the hardcoded-string guard: `npm test` — 64ce6b5
+- [x] 5.2 Type checking passes: `npx tsc --noEmit` — 64ce6b5
+- [x] 5.3 Lint passes with no new warnings: `npm run lint` — 64ce6b5
 
 #### Manual
 
-- [x] 5.4 Sleep tab between Feeding and Partner; Start/Stop/Save adds an entry with badge, duration and note
-- [x] 5.5 Force-close with a running sleep offers Continue / End now
-- [x] 5.6 Partner sync: sleep appears on the other phone within ~5 s as one row; full edit on either phone updates both; cleared note persists
-- [x] 5.7 Night sleep across midnight edits without a day jump; end-before-start and ≥ 24 h show errors
-- [x] 5.8 Swipe-delete works for own and partner sleeps on both devices
-- [x] 5.9 Texts correct in English and Polish; no regressions on other tabs
+- [x] 5.4 Sleep tab between Feeding and Partner; Start/Stop/Save adds an entry with badge, duration and note — 64ce6b5
+- [x] 5.5 Force-close with a running sleep offers Continue / End now — 64ce6b5
+- [x] 5.6 Partner sync: sleep appears on the other phone within ~5 s as one row; full edit on either phone updates both; cleared note persists — 64ce6b5
+- [x] 5.7 Night sleep across midnight edits without a day jump; end-before-start and ≥ 24 h show errors — 64ce6b5
+- [x] 5.8 Swipe-delete works for own and partner sleeps on both devices — 64ce6b5
+- [x] 5.9 Texts correct in English and Polish; no regressions on other tabs — 64ce6b5
