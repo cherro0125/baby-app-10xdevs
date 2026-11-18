@@ -1,0 +1,90 @@
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
+
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Spacing } from '@/constants/theme';
+import type { LocalSleep } from '@/db/types';
+import { useTheme } from '@/hooks/use-theme';
+
+interface SleepTimerProps {
+  active: LocalSleep | null;
+  onStart: () => void;
+  onStop: (endedAt: Date) => void;
+}
+
+// Sleeps run for hours, so hours get their own field once reached
+function formatElapsed(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const ss = s.toString().padStart(2, '0');
+  return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+}
+
+export function SleepTimer({ active, onStart, onStop }: SleepTimerProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const [elapsed, setElapsed] = useState(() =>
+    active ? Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000) : 0,
+  );
+
+  useEffect(() => {
+    if (!active) return;
+    const startMs = new Date(active.startedAt).getTime();
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startMs) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [active]);
+
+  if (!active) {
+    return (
+      <ThemedView style={styles.container}>
+        <Pressable onPress={onStart} style={[styles.startButton, { backgroundColor: theme.text }]}>
+          <ThemedText type="smallBold" style={{ color: theme.background }}>
+            {t('sleep.startButton')}
+          </ThemedText>
+        </Pressable>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.elapsed}>{formatElapsed(elapsed)}</ThemedText>
+      <Pressable onPress={() => onStop(new Date())} style={[styles.stopButton, { backgroundColor: theme.danger }]}>
+        <ThemedText type="smallBold" style={{ color: theme.dangerText }}>
+          {t('common.stop')}
+        </ThemedText>
+      </Pressable>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.four,
+  },
+  elapsed: {
+    fontSize: 72,
+    lineHeight: 80,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  startButton: {
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.six,
+    borderRadius: Spacing.five,
+    alignItems: 'center',
+  },
+  stopButton: {
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.six,
+    borderRadius: Spacing.five,
+    alignItems: 'center',
+  },
+});

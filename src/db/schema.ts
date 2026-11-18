@@ -46,6 +46,19 @@ async function migrate(db: AppDatabase): Promise<void> {
       synced INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS sleeps (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      sleep_type TEXT,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      duration_minutes INTEGER,
+      note TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      synced INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id TEXT PRIMARY KEY,
       operation TEXT NOT NULL,

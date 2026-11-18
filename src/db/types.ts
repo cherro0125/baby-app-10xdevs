@@ -27,6 +27,21 @@ export interface LocalFeeding {
   synced: number;
 }
 
+export type SleepType = 'NAP' | 'NIGHT' | 'OTHER';
+
+export interface LocalSleep {
+  id: string;
+  userId: string;
+  sleepType: SleepType | null;
+  startedAt: string;
+  endedAt: string | null;
+  durationMinutes: number | null;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  synced: number;
+}
+
 export interface SyncQueueItem {
   id: string;
   operation: 'CREATE' | 'FINALIZE' | 'DELETE';

@@ -1,4 +1,4 @@
-import type { MilkType } from '@/db/types';
+import type { MilkType, SleepType } from '@/db/types';
 
 /** Full replacement of a completed feeding's editable fields. */
 export interface FeedingEdit {
@@ -14,6 +14,14 @@ export interface ContractionEdit {
   startedAt: Date;
   endedAt: Date;
   strength: number | null; // null = no strength
+  note: string | null; // null = no note
+}
+
+/** Full replacement of a completed sleep's editable fields. */
+export interface SleepEdit {
+  startedAt: Date;
+  endedAt: Date;
+  sleepType: SleepType;
   note: string | null; // null = no note
 }
 

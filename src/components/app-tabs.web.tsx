@@ -28,6 +28,9 @@ export default function AppTabs() {
           <TabTrigger name="feeding-log" href="/feeding-log" asChild>
             <TabButton>{t('tabs.feeding')}</TabButton>
           </TabTrigger>
+          <TabTrigger name="sleep-log" href="/sleep-log" asChild>
+            <TabButton>{t('tabs.sleep')}</TabButton>
+          </TabTrigger>
           <TabTrigger name="partner" href="/partner" asChild>
             <TabButton>{t('tabs.partner')}</TabButton>
           </TabTrigger>
