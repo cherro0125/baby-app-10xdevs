@@ -3,7 +3,7 @@ project: BabyTrack
 version: 1
 status: draft
 created: 2026-06-27
-updated: 2026-09-14
+updated: 2026-11-18
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -35,7 +35,7 @@ BabyTrack gives a woman in active labor and her partner a shared, real-time view
 | S-03 | contraction-tracking           | log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries | S-01          | FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, US-01, Business Logic | done     |
 | S-04 | real-time-shared-contractions  | see a partner's contraction entries appear on-screen within seconds; see who logged each entry; edit or delete any entry | S-02, S-03    | FR-022, FR-023, FR-024, US-01               | done     |
 | S-05 | feeding-log                    | log a feeding event (type, amount, description); view feeding history; partner sees it in real time               | S-04          | FR-016, FR-017, FR-022, FR-023, FR-024, US-01 | done     |
-| S-06 | sleep-log                      | log a sleep session (start/end); view sleep history; partner sees it in real time                                 | S-04          | FR-018, FR-019, FR-022, FR-023, FR-024, US-01 | proposed |
+| S-06 | sleep-log                      | log a sleep session (start/end); view sleep history; partner sees it in real time                                 | S-04          | FR-018, FR-019, FR-022, FR-023, FR-024, US-01 | done     |
 | S-07 | medicine-log                   | log a medicine event (time, name, amount, reason); view medicine log; partner sees it in real time                | S-04          | FR-020, FR-021, FR-022, FR-023, FR-024, US-01 | proposed |
 
 ## Baseline
@@ -157,7 +157,7 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Same risk profile as S-05. The simplest of the three post-birth slices (only start/end time, no complex fields). Good candidate for parallel execution alongside S-05 and S-07.
-- **Status:** proposed
+- **Status:** done
 
 ---
 
@@ -217,3 +217,4 @@ What's already in place in the codebase as of 2026-06-27 (auto-researched + user
 - **S-03: User can log contractions (start/stop timer, strength, description, manual time); view log with duration, gap, 5-1-1 signal; delete entries** — Archived 2026-09-13 → `context/archive/2026-09-11-contraction-tracking/`. Lesson: —.
 - **S-02: invite a partner via share link/code, accept an invite, and unlink** — Archived 2026-09-14 → `context/archive/2026-09-13-partner-linking/`. Lesson: —.
 - **S-05: A parent can log a feeding event (start time, duration or amount, milk type: breast / formula / pumped / other, optional description) and view feeding history in chronological order. The other partner sees new feeding entries appear within a few seconds.** — Archived 2026-09-14 → `context/archive/2026-09-14-feeding-log/`. Lesson: —.
+- **S-06: A parent can log a sleep session (start time, end time) and view sleep history. The other partner sees new sleep entries appear within a few seconds.** — Archived 2026-11-18 → `context/archive/2026-09-14-sleep-log/`. Lesson: —.

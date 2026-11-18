@@ -1,10 +1,10 @@
 ---
 change_id: sleep-log
 title: Sleep log
-status: impl_reviewed
+status: archived
 created: 2026-09-14
 updated: 2026-11-18
-archived_at: null
+archived_at: 2026-11-18T11:59:05Z
 ---
 
 ## Notes
