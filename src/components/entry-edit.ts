@@ -62,16 +62,22 @@ function nearestTo(original: Date, time: ClockTime): Date {
 /**
  * Applies edited hours/minutes to a completed entry, each time staying on the day nearest its original
  * value, so corrections around midnight move by minutes, not by a day.
- * Returns 'endBeforeStart' when the end is not after the start, 'tooLong' for 24 h or more.
+ * Returns 'endBeforeStart' when the end is not after the start, 'tooLong' when changed times span 24 h or more.
  */
 export function buildEditTimes(
   entry: { startedAt: string; endedAt: string },
   start: ClockTime,
   end: ClockTime,
 ): { startedAt: Date; endedAt: Date } | 'endBeforeStart' | 'tooLong' {
-  const startedAt = nearestTo(new Date(entry.startedAt), start);
-  const endedAt = nearestTo(new Date(entry.endedAt), end);
+  const original = { startedAt: new Date(entry.startedAt), endedAt: new Date(entry.endedAt) };
+  const startedAt = nearestTo(original.startedAt, start);
+  const endedAt = nearestTo(original.endedAt, end);
   if (endedAt <= startedAt) return 'endBeforeStart';
-  if (endedAt.getTime() - startedAt.getTime() >= DAY_MS) return 'tooLong';
+  // Only for changed times: an entry stopped after 24 h or more (a forgotten timer) must stay
+  // editable, e.g. its type or note, as long as its times are kept.
+  const timesChanged =
+    startedAt.getTime() !== original.startedAt.getTime() ||
+    endedAt.getTime() !== original.endedAt.getTime();
+  if (timesChanged && endedAt.getTime() - startedAt.getTime() >= DAY_MS) return 'tooLong';
   return { startedAt, endedAt };
 }

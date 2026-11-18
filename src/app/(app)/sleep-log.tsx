@@ -68,13 +68,10 @@ export default function SleepLogScreen() {
     }
   }
 
-  async function handleEndNow() {
-    if (!activeSleep) return;
-    try {
-      await finalize(activeSleep.id, new Date(), 'NAP', null);
-    } catch (e) {
-      console.error('[SleepLogScreen] end-now failed', e);
-    }
+  function handleEndNow() {
+    // A sleep left running is often a night, so let the user pick the type as with Stop
+    setModalDismissed(true);
+    setPendingStop(new Date());
   }
 
   async function handleEditSave(id: string, changes: SleepEdit) {

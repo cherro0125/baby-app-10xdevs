@@ -23,7 +23,7 @@ interface SleepRowProps {
 const SLEEP_TYPE_COLORS: Record<SleepType, string> = {
   NAP: '#2196F3',
   NIGHT: '#7E57C2',
-  OTHER: '#9E9E9E',
+  OTHER: '#757575', // dark enough for the white badge text
 };
 
 function formatDuration(t: TFunction, minutes: number | null): string {

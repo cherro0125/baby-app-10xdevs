@@ -69,6 +69,16 @@ describe('buildEditTimes', () => {
     expect(buildEditTimes(feeding, { h: 9, m: 0 }, { h: 10, m: 0 })).toBe('tooLong');
   });
 
+  it('keeps an entry of 24 hours or more editable while its times are untouched', () => {
+    const sleep = { startedAt: at(21, 7, 0).toISOString(), endedAt: at(22, 8, 0).toISOString() };
+
+    expect(buildEditTimes(sleep, { h: 7, m: 0 }, { h: 8, m: 0 })).toEqual({
+      startedAt: at(21, 7, 0),
+      endedAt: at(22, 8, 0),
+    });
+    expect(buildEditTimes(sleep, { h: 7, m: 0 }, { h: 7, m: 30 })).toBe('tooLong');
+  });
+
   it('rejects an end equal to the start', () => {
     const feeding = { startedAt: at(21, 10, 0).toISOString(), endedAt: at(21, 10, 20).toISOString() };
 

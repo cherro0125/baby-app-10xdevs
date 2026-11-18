@@ -394,7 +394,7 @@ Move contractions onto the engine, re-download them once under server ids, uploa
 - `ContractionEditSheet` mirrors `FeedingEditSheet`:
   - `KeyboardAvoidingView`, title `contractions.edit.title`;
   - `TimeRow` start/end, then `ContractionDetailsFields`;
-  - errors stored as keys: `timeEdit.endAfterStart`, `feeding.edit.tooLong`, `feeding.edit.saveFailed`;
+  - errors stored as keys: `timeEdit.endAfterStart`, `contractions.edit.tooLong` (impl-review-phase-4 F3), `feeding.edit.saveFailed`;
   - Save is disabled while saving; a rejection keeps the sheet open.
 - For the running contraction the sheet shows a read-only start time with `timeEdit.stopFirst` and **Cancel only**. Today's Confirm is removed: it only re-saved the same values for own rows and threw for partner rows.
 - `index.tsx` wires `handleEditSave(id, changes)`, which awaits `edit`, closes on success, logs and rethrows on failure.
@@ -462,7 +462,7 @@ Add the local `sleeps` table and `use-sleeps.ts` on the engine, build the sleep 
 - `SleepDetailsFields` is a controlled type segmented control plus note (`maxLength 2000`). It is used by the completion sheet (Nap default) and the edit sheet (falls back to Nap if null).
 - The edit sheet behaves like `FeedingEditSheet`:
   - `TimeRow` + `SleepDetailsFields`;
-  - `buildEditTimes` with errors `timeEdit.endAfterStart`, `feeding.edit.tooLong`, `feeding.edit.saveFailed`;
+  - `buildEditTimes` with errors `timeEdit.endAfterStart`, `sleep.edit.tooLong` (impl-review-phase-4 F3), `feeding.edit.saveFailed`;
   - Save is disabled while saving; a rejection keeps the sheet open.
 - Badge colours come from theme tokens or the row's existing colour approach, mirroring `feeding-row.tsx`: NAP blue, NIGHT purple, OTHER grey.
 - Row and list behave like feeding row and list (swipe delete with confirm, author label, completed rows only).
